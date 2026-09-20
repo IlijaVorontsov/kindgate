@@ -77,6 +77,10 @@ the connected phone. Re-run it after editing any file here; it copies the
 sources into the Xcode project, so edit *these* files rather than the copies
 inside the project. The full log lands in `build.log`.
 
+Then open Kindgate on the phone. Its [setup checklist](#the-container-app)
+covers enabling the extension, allowing the sites and deleting the apps, and
+each step turns green by itself once it is done.
+
 ### By hand
 
 <details>
@@ -347,6 +351,38 @@ a shortcut of yours.
 > content script runs, so an x-callback-url result cannot be read back there.
 > The popup's Test button is the reliable check.
 
+### The container app
+
+Every Safari web extension ships inside a host app. The converter generates an
+empty one that says the extension is enabled and nothing else, which is both
+useless to a new user and thin for App Review. Kindgate's is a setup checklist,
+and every row reports live state rather than telling you what to go and check.
+
+| Row | Where the state comes from |
+| --- | --- |
+| Extension enabled | The extension itself, via a native message |
+| youtube.com allowed | A content script reporting that it ran there |
+| instagram.com allowed | The same |
+| Other Websites allowed | The same, bucketed as "other" |
+| YouTube app deleted | `canOpenURL("youtube://")` |
+| Instagram app deleted | `canOpenURL("instagram://")` |
+| Site on the Home Screen | `navigator.standalone`, reported by the content script |
+
+iOS gives an app no way to ask whether its own Safari extension is enabled, or
+which sites the user allowed. So the extension tells it. `background.js` sends a
+native message when it starts, which is proof the extension is on, and again
+when a content script reports it ran on a site, which is proof that site is
+allowed. `SafariWebExtensionHandler.swift` writes timestamps into a shared App
+Group and the checklist reads them.
+
+What crosses that boundary is deliberately tiny: a host name already reduced to
+`youtube.com`, `instagram.com` or `other`, and whether the page was opened from
+the Home Screen. No URLs, no page content, and it never leaves the device. The
+messages are throttled to one a minute per site.
+
+A row that was green and has gone quiet for a week turns amber rather than
+silently staying green, so an extension switched off in Settings shows up.
+
 ### The popup
 
 Grouped into collapsible categories, Check-in & cues, Evening plan, Pause,
@@ -377,7 +413,10 @@ pip.js/.css        Picture in Picture button and rotate-to-fullscreen
 player.js          Auto-unmute, default playback speed and quality
 upsell.js          Blocks the App Store banner and "open in app" nags
 popup.html/js/css  Settings and the cue summary behind the extension icon
+background.js      Status heartbeat: tells the container app the extension is on
 
+app/               The container app: setup checklist, Swift, overlaid on the
+                   project the converter generates
 build.sh           Convert, sign, build and install onto a paired iPhone
 site/              The kindgate.app website (Cloudflare Pages)
 scripts/           Release tooling; see CHANGELOG.md and changelog.d/
