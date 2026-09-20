@@ -1,0 +1,139 @@
+/* Kindgate — YouTube (desktop + m.youtube.com).
+   Every block is gated by a class youtube.js puts on <html> for a feature the
+   popup has enabled: kg-yt-shorts, kg-yt-home, kg-yt-related, kg-yt-comments,
+   kg-yt-autoplay. kg-watch marks /watch pages; kg-nothumbs marks /feed/ pages. */
+
+/* ---- Shorts: shelves, tiles, tabs, chips ---- */
+html.kg-yt-shorts ytd-reel-shelf-renderer,
+html.kg-yt-shorts ytm-reel-shelf-renderer,
+html.kg-yt-shorts ytd-rich-shelf-renderer[is-shorts],
+html.kg-yt-shorts ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html.kg-yt-shorts grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+html.kg-yt-shorts grid-shelf-view-model:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytd-rich-section-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytm-rich-section-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytd-item-section-renderer:has(> #contents > ytd-reel-shelf-renderer),
+html.kg-yt-shorts ytm-item-section-renderer:has(ytm-reel-shelf-renderer),
+html.kg-yt-shorts ytm-shorts-lockup-view-model,
+html.kg-yt-shorts ytm-shorts-lockup-view-model-v2,
+html.kg-yt-shorts ytd-rich-item-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytd-video-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytd-grid-video-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytd-compact-video-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytm-video-with-context-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytm-compact-video-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytm-rich-item-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytd-guide-entry-renderer:has(a[href="/shorts"]),
+html.kg-yt-shorts ytd-guide-entry-renderer:has(a[title="Shorts"]),
+html.kg-yt-shorts ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+html.kg-yt-shorts ytd-mini-guide-entry-renderer:has(a[href="/shorts"]),
+html.kg-yt-shorts ytm-pivot-bar-item-renderer:has(a[href="/shorts"]),
+html.kg-yt-shorts ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.shorts),
+html.kg-yt-shorts yt-tab-shape[tab-title="Shorts"],
+html.kg-yt-shorts tp-yt-paper-tab:has(a[href$="/shorts"]),
+html.kg-yt-shorts yt-chip-cloud-chip-renderer:has([title="Shorts"]),
+
+/* ---- Home / Explore / Trending entry points (the feeds themselves are
+        redirected to /feed/subscriptions by youtube.js) ---- */
+html.kg-yt-home ytd-guide-entry-renderer:has(a[href="/"]),
+html.kg-yt-home ytd-guide-entry-renderer:has(a[href="/feed/explore"]),
+html.kg-yt-home ytd-guide-entry-renderer:has(a[href="/feed/trending"]),
+html.kg-yt-home ytd-mini-guide-entry-renderer:has(a[href="/"]),
+html.kg-yt-home ytd-mini-guide-entry-renderer[aria-label="Home"],
+html.kg-yt-home ytd-mini-guide-entry-renderer[aria-label="Startseite"],
+html.kg-yt-home ytd-guide-section-renderer:has(a[href="/feed/trending"]),
+html.kg-yt-home ytd-guide-section-renderer:has(a[href="/feed/explore"]),
+html.kg-yt-home ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.w2w),
+html.kg-yt-home ytm-pivot-bar-item-renderer:has(a[href="/"]),
+
+/* ---- Autoplay: inline feed previews, the toggle, end-screen cards ---- */
+html.kg-yt-autoplay ytm-video-preview,
+html.kg-yt-autoplay ytm-video-preview-portal,
+html.kg-yt-autoplay ytm-video-preview-overlays,
+html.kg-yt-autoplay .ytmVideoPreviewHost,
+html.kg-yt-autoplay .video-preview,
+html.kg-yt-autoplay .video-preview-portal,
+html.kg-yt-autoplay .video-preview-shim,
+html.kg-yt-autoplay player-autonav-toggle,
+html.kg-yt-autoplay .ytwPlayerAutonavToggleHost,
+html.kg-yt-autoplay .ytp-autonav-toggle-button-container,
+html.kg-yt-autoplay .ytp-endscreen-content,
+html.kg-yt-autoplay .ytp-ce-element,
+html.kg-yt-autoplay .ytp-pause-overlay,
+
+/* ---- Recommendations beside / below a video ---- */
+html.kg-yt-related #related,
+html.kg-yt-related ytd-watch-next-secondary-results-renderer,
+html.kg-yt-related ytd-compact-video-renderer,
+html.kg-yt-related ytm-compact-video-renderer,
+html.kg-yt-related ytm-fullscreen-related-videos-entry-point-view-model,
+html.kg-yt-related .fullscreen-watch-next-entrypoint-wrapper,
+html.kg-yt-related.kg-watch .related-items-container,
+html.kg-yt-related.kg-watch ytm-chip-cloud-renderer,
+html.kg-yt-related.kg-watch yt-chip-cloud-renderer,
+html.kg-yt-related.kg-watch chip-bar-view-model,
+html.kg-yt-related.kg-watch .chip-bar,
+html.kg-yt-related.kg-watch ytm-video-with-context-renderer,
+html.kg-yt-related.kg-watch ytm-continuation-item-renderer,
+html.kg-yt-related.kg-watch ytm-reel-shelf-renderer,
+html.kg-yt-related.kg-watch ytm-companion-slot,
+
+/* ---- Comments ---- */
+html.kg-yt-comments #comments,
+html.kg-yt-comments ytd-comments,
+html.kg-yt-comments ytm-comments-entry-point-header-renderer,
+html.kg-yt-comments ytm-comment-section-renderer,
+html.kg-yt-comments [target-id="engagement-panel-comments-section"],
+html.kg-yt-comments.kg-watch yt-video-metadata-carousel-view-model,
+html.kg-yt-comments.kg-watch .ytVideoMetadataCarouselViewModelHost,
+html.kg-yt-comments.kg-watch comments-entry-point-teaser-view-model,
+html.kg-yt-comments.kg-watch yt-comment-teaser-carousel-item-view-model,
+html.kg-yt-comments.kg-watch yt-carousel-item-view-model:has(comments-entry-point-teaser-view-model),
+
+/* ---- Anything the JS marked ---- */
+[data-kindgate-hidden] {
+  display: none !important;
+}
+
+/* ---- Subscriptions / feed pages: no thumbnails (kg-nothumbs) ---- */
+html.kg-nothumbs yt-thumbnail-view-model,
+html.kg-nothumbs ytm-compact-thumbnail,
+html.kg-nothumbs collection-thumbnail-view-model,
+html.kg-nothumbs yt-triptych-thumbnail,
+html.kg-nothumbs ytd-thumbnail,
+html.kg-nothumbs .media-item-thumbnail-container,
+html.kg-nothumbs .video-thumbnail-container-compact,
+html.kg-nothumbs .video-thumbnail-container-compact-rounded,
+html.kg-nothumbs .video-thumbnail-container-large,
+html.kg-nothumbs .video-thumbnail-img,
+html.kg-nothumbs .video-thumbnail-bg,
+html.kg-nothumbs #thumbnail {
+  display: none !important;
+}
+html.kg-nothumbs ytm-video-with-context-renderer,
+html.kg-nothumbs ytm-media-item { min-height: 62px; }
+
+/* ---- Our replacement bottom bar on watch pages ---- */
+.kg-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483500;
+  display: flex; align-items: stretch;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(18, 18, 20, 0.92);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--kg-font-body);
+}
+.kg-tabbar .kg-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 8px 4px 10px; min-height: 52px;
+  color: #f1f1f1; text-decoration: none; font-size: 11px; font-weight: 500;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.kg-tabbar .kg-tab:active { opacity: 0.55; }
+.kg-tabbar svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.kg-tabbar .kg-tab-fill { fill: currentColor; stroke: none; }
+html.kg-watch.kg-yt-tabbar body { padding-bottom: 64px !important; }
+@media (prefers-color-scheme: light) {
+  .kg-tabbar { background: rgba(255, 255, 255, 0.94); border-top-color: rgba(0, 0, 0, 0.1); }
+  .kg-tabbar .kg-tab { color: #0f0f0f; }
+}

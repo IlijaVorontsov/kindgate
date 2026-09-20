@@ -1,0 +1,18 @@
+# Build artifacts
+build.log
+
+# Generated Xcode project (see build.sh)
+Kindgate-Xcode/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Claude Code worktrees
+.claude/worktrees/
+
+# Strategy and go-to-market notes. These stay off GitHub entirely;
+# they live in ~/Projects/kindgate-strategy/.
+docs/

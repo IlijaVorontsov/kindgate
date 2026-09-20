@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#F6F1E8"/>
+  <g transform="translate(96 150)">
+    <g transform="scale(0.203)">
+      <rect width="512" height="512" rx="114" fill="#D98E3A"/>
+      <g fill="none" stroke="#F6F1E8" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M112 150v240"/>
+        <path d="M400 150v240"/>
+        <g transform="translate(180 0) skewY(-7)">
+          <path d="M0 228v162"/>
+          <path d="M62 206v184"/>
+          <path d="M124 228v162"/>
+          <path d="M0 300h124"/>
+          <path d="M0 356h124"/>
+          <path d="M0 228q62-54 124 0"/>
+        </g>
+      </g>
+    </g>
+    <text x="130" y="76" font-family="Georgia, serif" font-size="56" font-weight="600" fill="#1F1D1A">Kindgate</text>
+  </g>
+  <text x="96" y="360" font-family="Georgia, serif" font-size="104" font-weight="600" fill="#1F1D1A">A gate, not a wall.</text>
+  <text x="96" y="432" font-family="Helvetica, Arial, sans-serif" font-size="34" fill="#4A453E">YouTube and Instagram, quieted. In Safari, on your iPhone.</text>
+  <rect x="96" y="500" width="1008" height="4" rx="2" fill="#D98E3A"/>
+  <text x="96" y="556" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="#4A453E">kindgate.app</text>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Kindgate">
+  <title>Kindgate</title>
+  <rect width="512" height="512" rx="114" fill="#D98E3A"/>
+  <g fill="none" stroke="#F6F1E8" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M112 150v240"/>
+    <path d="M400 150v240"/>
+    <g transform="translate(180 0) skewY(-7)">
+      <path d="M0 228v162"/>
+      <path d="M62 206v184"/>
+      <path d="M124 228v162"/>
+      <path d="M0 300h124"/>
+      <path d="M0 356h124"/>
+      <path d="M0 228q62-54 124 0"/>
+    </g>
+  </g>
+</svg>

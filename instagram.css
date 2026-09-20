@@ -1,0 +1,42 @@
+/* Kindgate — Instagram: only accounts you follow */
+
+/* Navigation entry points to Reels / Explore (sidebar, bottom tab bar, top bar) */
+html.kg-ig-reels a[href="/reels/"],
+html.kg-ig-reels a[href^="/reels/"],
+html.kg-ig-reels a[href="/explore/"],
+html.kg-ig-reels a[href^="/explore/"],
+html.kg-ig-reels a[href="/explore/search/"],
+/* Direct-link variants Instagram sometimes uses */
+html.kg-ig-reels [role="link"][href="/reels/"],
+html.kg-ig-reels [role="link"][href="/explore/"],
+
+/* Anything the JS marked as a suggestion */
+[data-kindgate-hidden] {
+  display: none !important;
+}
+
+/* Keep the profile grid tabs on your own profile untouched: those links look
+   like /<user>/reels/ and are not matched by the rules above. */
+
+/* Doom-scroll checkpoint card */
+.kg-ig-card {
+  margin: 14px auto; padding: 20px 18px; max-width: 470px; box-sizing: border-box;
+  border: 1px solid rgba(128,128,128,0.28); border-radius: 14px;
+  background: rgba(127,127,127,0.06);
+  font-family: var(--kg-font-body);
+  text-align: center;
+}
+.kg-ig-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.55; }
+.kg-ig-title { margin-top: 8px; font-size: 19px; font-weight: 700; }
+.kg-ig-sub { margin-top: 6px; font-size: 14px; line-height: 1.45; opacity: 0.68; }
+.kg-ig-row { display: flex; gap: 10px; margin-top: 16px; }
+.kg-ig-btn {
+  flex: 1; appearance: none; -webkit-appearance: none; cursor: pointer;
+  border: 1px solid rgba(128,128,128,0.32); border-radius: 10px; padding: 12px 10px;
+  font: inherit; font-size: 15px; font-weight: 600; background: transparent; color: inherit;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.kg-ig-btn-primary { background: #0095f6; border-color: #0095f6; color: #fff; }
+.kg-ig-btn:active { opacity: 0.7; }
+
+.kg-ig-end { background: rgba(0,149,246,0.07); border-color: rgba(0,149,246,0.35); }
