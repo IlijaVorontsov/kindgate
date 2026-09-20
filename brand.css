@@ -1,0 +1,74 @@
+/* Kindgate — brand tokens.
+ *
+ * The single source of colour and type for every Kindgate surface. Loaded
+ * first in each content-script entry (see manifest.json) and linked from
+ * popup.html, so the names below are available on every page we draw on.
+ *
+ * Names follow the brand canvas: honey, sage, ink, cream, sand, amber ink.
+ * Host pages are never restyled by this file — it only declares variables.
+ */
+/* The two brand faces, bundled as Latin subsets of the upstream variable
+ * fonts. Both are SIL Open Font License 1.1 — see fonts/OFL.txt.
+ *
+ * On an extension page (the popup) these always load. Inside a content script
+ * the host page's own font-src policy decides: YouTube and Instagram may
+ * refuse them, in which case the stacks below fall through to New York and
+ * the system sans and nothing breaks. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/fraunces-latin-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/fraunces-italic-latin-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/instrument-sans-latin-var.woff2") format("woff2");
+}
+
+:root {
+  /* Core palette */
+  --kg-honey: #D98E3A;        /* the icon, marks, accents */
+  --kg-sage: #6F8461;         /* wins, calm, "done" */
+  --kg-ink: #1F1D1A;          /* text, primary buttons */
+  --kg-cream: #F6F1E8;        /* ground */
+  --kg-sand: #EADFCE;         /* cards, secondary buttons */
+  --kg-amber-ink: #A85F17;    /* links and eyebrows on cream */
+
+  /* Supporting tones, all drawn from the canvas */
+  --kg-ink-muted: #4A453E;    /* secondary text on cream */
+  --kg-line: #D9CFBE;         /* hairlines; body text on ink panels */
+  --kg-amber-ink-hover: #7A4410;
+  --kg-sage-deep: #4F6344;    /* the win line on a light ground */
+  --kg-sage-light: #A8BE97;   /* the same idea on a dark ground */
+  --kg-honey-soft: #FFCF9E;   /* warm highlight on the night screens */
+
+  /* Ink, lifted. Surfaces stacked on an ink ground: a raised card, a pressed
+   * button, the deep end of a gradient. All neutral-warm, all from --kg-ink. */
+  --kg-ink-lift: #2A2622;
+  --kg-ink-raised: #332F2A;
+  --kg-ink-raised-2: #433E37;
+  --kg-ink-press: #35312C;
+  --kg-ink-deep: #151310;
+
+  /* Type. Both faces are bundled above; the rest of each stack is the
+   * fallback for a host page that refuses to load an extension font. */
+  --kg-font-display: "Fraunces", "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --kg-font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --kg-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Shape */
+  --kg-radius-card: 16px;
+  --kg-radius-control: 14px;
+  --kg-radius-pill: 999px;
+}

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kindgate</title>
+  <link rel="stylesheet" href="brand.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1 class="wordmark"><svg viewBox="0 0 512 512" width="26" height="26" aria-hidden="true"><rect width="512" height="512" rx="114" fill="#D98E3A"/><g fill="none" stroke="#F6F1E8" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"><path d="M112 150v240"/><path d="M400 150v240"/><g transform="translate(180 0) skewY(-7)"><path d="M0 228v162"/><path d="M62 206v184"/><path d="M124 228v162"/><path d="M0 300h124"/><path d="M0 356h124"/><path d="M0 228q62-54 124 0"/></g></g></svg>Kindgate</h1>
+    <p class="muted">Everything here stays on this phone.</p>
+  </header>
+
+  <!-- ============================ Check-in & cues ============================ -->
+  <details class="cat" id="cat-cues" open>
+    <summary><span class="cat-title">Check-in &amp; cues</span><span class="cat-sub">Your week, by feeling</span></summary>
+    <div class="cat-body">
+      <p id="range" class="muted">Last 7 days</p>
+      <div class="stat"><span id="total">–</span><span class="muted">opens this week</span></div>
+      <h2>By feeling</h2><div id="byCue" class="bars"></div>
+      <h2>By site</h2><div id="bySite" class="bars"></div>
+      <h2>Time of day</h2><div id="byHour" class="hours"></div>
+      <div class="hour-labels muted"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
+      <h2>Day of week</h2><div id="byDay" class="bars"></div>
+      <h2>Recent</h2><ul id="recent" class="recent"></ul>
+      <p id="empty" class="muted center" hidden>Nothing logged yet. Open Instagram or YouTube and answer the check-in.</p>
+      <footer><button id="copy" type="button">Copy as JSON</button><button id="clear" type="button" class="danger">Clear log</button></footer>
+    </div>
+  </details>
+
+  <!-- ================================ Morning ================================ -->
+  <details class="cat" id="cat-morning">
+    <summary><span class="cat-title">Morning</span><span class="cat-sub">The first 30 minutes</span></summary>
+    <div class="cat-body">
+      <p class="muted">For roughly 15–30 minutes after waking, the parts of the brain
+        that weigh things up are still coming back online, so behaviour runs on
+        whatever the context cues. Inside this window the phone shows your
+        sequence instead of a feed — no questions, nothing to decide.</p>
+
+      <div class="win" style="margin-top:10px">
+        <label class="row"><input type="checkbox" id="morningOn"><span><strong>Morning window</strong></span></label>
+        <div class="times"><input type="time" id="morningStart"> <span class="muted">to</span> <input type="time" id="morningEnd"></div>
+      </div>
+
+      <details class="sub" id="sub-morning-steps" open>
+        <summary>First, I will…</summary>
+        <p class="muted">A short list, in order — each one you could start without thinking. Tick them off on the page; once the list is done it doesn’t come back until tomorrow.</p>
+        <div class="plans">
+          <div class="plan"><input type="text" id="mstep0" maxlength="44"><input type="url" id="murl0" placeholder="Optional link" inputmode="url"></div>
+          <div class="plan"><input type="text" id="mstep1" maxlength="44"><input type="url" id="murl1" placeholder="Optional link" inputmode="url"></div>
+          <div class="plan"><input type="text" id="mstep2" maxlength="44"><input type="url" id="murl2" placeholder="Optional link" inputmode="url"></div>
+          <div class="plan"><input type="text" id="mstep3" maxlength="44"><input type="url" id="murl3" placeholder="Optional link" inputmode="url"></div>
+        </div>
+      </details>
+
+      <details class="sub" id="sub-coffee">
+        <summary>Coffee timer</summary>
+        <div class="field"><label for="coffeeDelay">Wait after getting up</label>
+          <select id="coffeeDelay"><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
+        <p class="muted">The countdown starts when you tick the first step. The
+          morning page shows the time your coffee is due, and the next page you
+          open after that says so.</p>
+        <p class="muted"><strong>For an alert that actually buzzes</strong>, an
+          extension can’t send notifications while Safari is closed — but it can
+          hand off to Shortcuts, which can.</p>
+        <div class="field"><label for="shortcutName">Shortcut name</label>
+          <input type="text" id="shortcutName" placeholder="Coffee timer" maxlength="40"></div>
+        <p class="muted">One-time set-up, then a button appears on the morning page:</p>
+        <p class="muted">Kindgate sends one thing: the minutes to wait (e.g.
+          <code>90</code>) as <em>Shortcut Input</em>. Everything else — timer or
+          reminder, the alert, the date maths — lives in the shortcut.</p>
+        <p class="muted"><strong>Easiest build — a timer.</strong> One action:
+          <em>Start Timer</em> for <em>Shortcut Input</em> minutes. The duration field
+          takes a number straight away, with no date to wrestle.</p>
+        <p class="muted"><strong>If you want a reminder:</strong> putting
+          <em>Shortcut Input</em> straight into <em>At Time</em> fails with
+          “couldn’t convert from Text to Date” — the input is text, and that field
+          needs a date. Something has to make a date first:</p>
+        <ol class="howto">
+          <li><strong>Add an <em>Adjust Date</em> action above the reminder.</strong>
+            Set it to: add <em>Shortcut Input</em> <em>Minutes</em> to
+            <em>Current Date</em>. This is the missing piece — it outputs an
+            <strong>Adjusted Date</strong>.</li>
+          <li>In <em>Add New Reminder</em>, tap the <em>At Time</em> field and put
+            <strong>Adjusted Date</strong> in it — not Shortcut Input.</li>
+          <li>Take <em>Shortcut Input</em> out of the reminder’s title, unless you
+            want “90” in the text.</li>
+          <li>Type the shortcut’s exact name above.</li>
+        </ol>
+        <p class="muted">The rule: <em>Shortcut Input</em> is text. Only
+          <em>Current Date</em> and <em>Adjust Date</em> produce real dates, and only
+          a real date works in that field.</p>
+        <p class="muted">Or just ask Siri “set a timer for 90 minutes”. Only the
+          Shortcuts app has a documented URL scheme; Clock and Reminders don’t,
+          so this is the supported route.</p>
+        <div class="btnrow">
+          <button type="button" id="scCreate">Create it in Shortcuts</button>
+          <button type="button" id="scRecipe">Copy the steps</button>
+        </div>
+        <button type="button" id="scTest">Test it (runs the shortcut with input 1)</button>
+        <p class="muted">This runs the <em>whole</em> shortcut, so read the outcome
+          carefully:<br>
+          • <strong>Shortcuts says it can’t find it</strong> → the name is wrong.<br>
+          • <strong>Shortcuts opens and shows an error</strong> → the name is right;
+            the actions inside need fixing.<br>
+          • <strong>A timer or reminder appears</strong> → done.</p>
+      </details>
+
+      <details class="sub" id="sub-morning-setup">
+        <summary>Set-up routine</summary>
+        <p class="muted">Five things that do more than the app can. Tick them off as you put them in place.</p>
+        <label class="row"><input type="checkbox" id="ms_charger" data-setup="charger"><span><strong>The phone charges outside the bedroom</strong><br><span class="muted">The single strongest move: people with good self-control mostly avoid temptation rather than resist it. If it must be in the room, put it across it.</span></span></label>
+        <label class="row" style="margin-top:10px"><input type="checkbox" id="ms_wake" data-setup="wake"><span><strong>One wake time, weekends included</strong><br><span class="muted">A fixed wake time is what steadies the whole cycle.</span></span></label>
+        <label class="row" style="margin-top:10px"><input type="checkbox" id="ms_ifthen" data-setup="ifthen"><span><strong>Written as if–then</strong><br><span class="muted">“If I wake and reach for my phone, then I put my feet on the floor and open the curtains.” Naming the cue and the response is what makes plans hold.</span></span></label>
+        <label class="row" style="margin-top:10px"><input type="checkbox" id="ms_light" data-setup="light"><span><strong>Daylight in the first hour</strong><br><span class="muted">Outside beats a window; a window beats a lamp.</span></span></label>
+        <label class="row" style="margin-top:10px"><input type="checkbox" id="ms_night" data-setup="night"><span><strong>Tomorrow decided tonight</strong><br><span class="muted">Anything you leave for the morning gets decided by the least capable version of you.</span></span></label>
+        <p class="muted" style="margin-top:12px">Give it weeks, not days. In the study people usually cite, habits took a median of about 66 days to settle — and ranged from 18 to 254. The “21 days” figure is a myth.</p>
+      </details>
+
+      <p id="morningStatus" class="status"></p>
+    </div>
+  </details>
+
+  <!-- ============================== Evening plan ============================== -->
+  <details class="cat" id="cat-evening">
+    <summary><span class="cat-title">Evening plan</span><span class="cat-sub">After work &amp; night</span></summary>
+    <div class="cat-body">
+      <div class="stat"><span id="wins">–</span><span class="muted">wins this week</span></div>
+      <p id="streak" class="muted"></p>
+      <p id="winStatus" class="status"></p>
+
+      <details class="sub" id="sub-windows" open>
+        <summary>Windows</summary>
+        <p class="muted">Inside these, the check-in shows your plans instead of asking how you feel.</p>
+        <div class="win">
+          <label class="row"><input type="checkbox" id="workOn"><span><strong>After work</strong></span></label>
+          <div class="times"><input type="time" id="workStart"> <span class="muted">to</span> <input type="time" id="workEnd"></div>
+        </div>
+        <div class="win">
+          <label class="row"><input type="checkbox" id="nightOn"><span><strong>Night</strong></span></label>
+          <div class="times"><input type="time" id="nightStart"> <span class="muted">to</span> <input type="time" id="nightEnd"></div>
+        </div>
+      </details>
+
+      <details class="sub" id="sub-plans">
+        <summary>Instead, I will…</summary>
+        <div class="plans">
+          <div class="plan"><input type="text" id="plan0" placeholder="e.g. 20-minute walk" maxlength="40"><input type="url" id="url0" placeholder="Optional link to open" inputmode="url"></div>
+          <div class="plan"><input type="text" id="plan1" placeholder="e.g. Cook something" maxlength="40"><input type="url" id="url1" placeholder="Optional link to open" inputmode="url"></div>
+          <div class="plan"><input type="text" id="plan2" placeholder="e.g. Read" maxlength="40"><input type="url" id="url2" placeholder="Optional link to open" inputmode="url"></div>
+        </div>
+        <p class="muted">Concrete and doable in the next five minutes. A link (a podcast, the Books app) takes you straight there.</p>
+      </details>
+
+      <details class="sub" id="sub-night">
+        <summary>Night mode</summary>
+        <p class="muted">Inside the night window, <strong>every tab</strong> opened in Safari lands on the can’t-sleep page. “Continue anyway” clears only the tab you tapped it in — a new tab starts over. Sites listed here are always allowed (one per line, e.g. <code>maps.apple.com</code>).</p>
+        <textarea id="nightAllow" rows="3" placeholder="maps.apple.com&#10;mybank.example" style="width:100%"></textarea>
+        <h3>Can’t-sleep audio (optional)</h3>
+        <input type="url" id="nsdr" placeholder="Default: Huberman Lab 20-minute NSDR" inputmode="url" style="width:100%">
+        <p class="muted">Shown on the “Can’t sleep?” screen, and offered whenever you log “tired” by day. The default is Huberman Lab’s 20-minute NSDR; that one video is let through the check-in and night page for 25 minutes. Paste another link (Apple Music, Spotify, a podcast app) to use it instead.</p>
+      </details>
+
+      <details class="sub" id="sub-warm">
+        <summary>Warm screen</summary>
+        <label class="row"><input type="checkbox" id="warmOn"><span><strong>Warm and dim every page at night</strong><br><span class="muted">An amber layer over the page itself, fading in and out over the ramp so it never snaps. Goes further than Night Shift, which barely touches bright web pages.</span></span></label>
+        <div class="times"><input type="time" id="warmStart"> <span class="muted">to</span> <input type="time" id="warmEnd"></div>
+        <div class="field"><label for="warmth">Warmth</label>
+          <select id="warmth"><option value="30">Slight</option><option value="50">Gentle</option><option value="70">Warm</option><option value="85">Very warm</option><option value="100">Candlelight</option></select></div>
+        <div class="field"><label for="warmDim">Dimming</label>
+          <select id="warmDim"><option value="0">None</option><option value="20">Slight</option><option value="45">Medium</option><option value="70">Strong</option><option value="100">Darkest</option></select></div>
+        <div class="field"><label for="warmRamp">Fade in over</label>
+          <select id="warmRamp"><option value="0">No fade</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option></select></div>
+        <h3>Leave these sites alone</h3>
+        <textarea id="warmSkip" rows="2" placeholder="figma.com&#10;photos.google.com" style="width:100%"></textarea>
+        <p class="muted">One per line — for anything where colour has to be true.</p>
+      </details>
+    </div>
+  </details>
+
+  <!-- ================================= Pause ================================= -->
+  <details class="cat" id="cat-pause">
+    <summary><span class="cat-title">Pause</span><span class="cat-sub">Friction on sites you choose</span></summary>
+    <div class="cat-body" id="pauseSection">
+      <div id="pinGate" hidden>
+        <p class="muted">This section is locked.</p>
+        <div class="field"><input type="password" id="pinEntry" inputmode="numeric" placeholder="PIN" maxlength="8" style="width:120px"><button type="button" id="pinUnlock" style="flex:none">Unlock</button></div>
+        <p id="pinWrong" class="muted" hidden>That's not it.</p>
+      </div>
+      <div id="pauseBody">
+        <label class="row"><input type="checkbox" id="pauseOn">
+          <span><strong>Pause screen on listed sites</strong><br>
+          <span class="muted">A breathing pause, a feeling check-in and your replacement action — then “continue anyway”. Friction, not a wall.</span></span></label>
+
+        <details class="sub" id="sub-sites">
+          <summary>Sites</summary>
+          <textarea id="pauseSites" rows="4" placeholder="One per line. A word matches any site containing it; a domain matches that site." style="width:100%"></textarea>
+          <p class="muted">Leave empty to use the built-in list of common adult sites.</p>
+          <div class="field"><label for="pauseSeconds">Pause length</label>
+            <select id="pauseSeconds"><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option></select></div>
+        </details>
+
+        <details class="sub" id="sub-goal">
+          <summary>Your goal</summary>
+          <div class="field"><label for="goalMode">Aim</label>
+            <select id="goalMode"><option value="reduce">Less, on my terms</option><option value="abstain">Stop</option></select></div>
+          <div id="goalRules">
+            <label class="row"><input type="checkbox" id="goalWeekends"><span>Only on weekends</span></label>
+            <label class="row" style="margin-top:8px"><input type="checkbox" id="goalWork"><span>Not at work</span></label>
+            <div class="times" style="margin-left:30px"><input type="time" id="goalWorkStart"> <span class="muted">to</span> <input type="time" id="goalWorkEnd"></div>
+            <div class="field"><label for="goalNotAfter">Not after</label><input type="time" id="goalNotAfter"></div>
+            <div class="field"><label for="goalNotBefore">Not before</label><input type="time" id="goalNotBefore"></div>
+          </div>
+          <p class="muted">Outside these rules the pause runs its full length; inside them it’s five seconds. Nothing is ever a hard block.</p>
+        </details>
+
+        <details class="sub" id="sub-alts">
+          <summary>Replacement actions</summary>
+          <p class="muted">What you’ll do instead, per feeling. Pre-filled with starting points — make them yours.</p>
+          <div class="plans">
+            <div class="alt"><span>Bored</span><input type="text" id="alt_bored" maxlength="48"></div>
+            <div class="alt"><span>Stressed</span><input type="text" id="alt_stressed" maxlength="48"></div>
+            <div class="alt"><span>Lonely</span><input type="text" id="alt_lonely" maxlength="48"></div>
+            <div class="alt"><span>Tired</span><input type="text" id="alt_tired" maxlength="48"></div>
+            <div class="alt"><span>Aroused</span><input type="text" id="alt_aroused" maxlength="48"></div>
+            <div class="alt"><span>Habit</span><input type="text" id="alt_habit" maxlength="48"></div>
+          </div>
+        </details>
+
+        <details class="sub" id="sub-patterns">
+          <summary>Patterns</summary>
+          <div id="pauseInsights" class="insights"><p class="muted">No pauses logged yet.</p></div>
+        </details>
+
+        <details class="sub" id="sub-assess">
+          <summary>Check in with yourself</summary>
+          <p class="muted">Six questions, about the last six months. Based on the ICD-11 description of compulsive sexual behaviour. Not a diagnosis — a pointer.</p>
+          <div id="assess" class="assess"></div>
+          <button type="button" id="assessScore">See what it suggests</button>
+          <p id="assessResult" class="assess-result" hidden></p>
+        </details>
+
+        <details class="sub" id="sub-lock">
+          <summary>Lock this section</summary>
+          <p class="muted">The log holds the time, the feeling and what you chose — never a site. A PIN keeps casual eyes out of this section.</p>
+          <div class="field"><input type="password" id="pinNew" inputmode="numeric" placeholder="PIN" maxlength="8" style="width:100%"><button type="button" id="pinSet" style="flex:none">Set</button><button type="button" id="pinClear" style="flex:none" hidden>Remove</button></div>
+        </details>
+      </div>
+    </div>
+  </details>
+
+  <!-- ============================ YouTube & feeds ============================ -->
+  <details class="cat" id="cat-youtube">
+    <summary><span class="cat-title">YouTube</span><span class="cat-sub">What to remove, player, playback</span></summary>
+    <div class="cat-body">
+      <details class="sub" id="sub-yt-clutter" open>
+        <summary>What to remove</summary>
+        <label class="row"><input type="checkbox" id="f_ytHome" data-feature="ytHome"><span><strong>Open on Subscriptions</strong><br><span class="muted">Home, Explore and Trending redirect there; their buttons are hidden; the logo goes there.</span></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytShorts" data-feature="ytShorts"><span><strong>Hide Shorts</strong><br><span class="muted">Shelves, tiles and the tab; Shorts links open in the normal player.</span></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytRelated" data-feature="ytRelated"><span><strong>Hide recommendations on watch pages</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytComments" data-feature="ytComments"><span><strong>Hide comments</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytAutoplay" data-feature="ytAutoplay"><span><strong>No autoplay</strong><br><span class="muted">No next video, no inline previews in feeds, no end-screen cards.</span></span></label>
+      </details>
+      <details class="sub" id="sub-yt-player">
+        <summary>Player &amp; navigation</summary>
+        <label class="row"><input type="checkbox" id="f_ytTabBar" data-feature="ytTabBar"><span><strong>Subscriptions / You bar on watch pages</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytPip" data-feature="ytPip"><span><strong>Picture in Picture button</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytRotate" data-feature="ytRotate"><span><strong>Rotate to fullscreen</strong></span></label>
+      </details>
+      <h3>Playback</h3>
+      <label class="row"><input type="checkbox" id="unmute"><span><strong>Unmute automatically</strong><br><span class="muted">Takes effect once playback has started.</span></span></label>
+      <label class="row" style="margin-top:10px"><input type="checkbox" id="blockupsell"><span><strong>Block “open in app” prompts</strong><br><span class="muted">Removes the App Store banner and the sites’ own “use the app” nags.</span></span></label>
+      <label class="row" style="margin-top:10px"><input type="checkbox" id="hidethumbs"><span><strong>Hide thumbnails in feeds</strong><br><span class="muted">Turn off if the Subscriptions list stalls while scrolling.</span></span></label>
+      <div class="field"><label for="speed">Default speed</label>
+        <select id="speed"><option value="1">Normal</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></div>
+      <div class="field"><label for="quality">Default quality</label>
+        <select id="quality"><option value="auto">Auto</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option><option value="240">240p</option><option value="144">144p</option></select></div>
+      <p class="muted">Quality is best effort: YouTube’s player API is out of an extension’s reach on iOS, so this sets the preference YouTube remembers rather than forcing each video.</p>
+    </div>
+  </details>
+
+  <!-- =============================== Instagram =============================== -->
+  <details class="cat" id="cat-instagram">
+    <summary><span class="cat-title">Instagram</span><span class="cat-sub">Only accounts you follow</span></summary>
+    <div class="cat-body">
+      <label class="row"><input type="checkbox" id="f_igFollowing" data-feature="igFollowing"><span><strong>Open on Following</strong><br><span class="muted">The home feed becomes Instagram’s own “Following” view — no algorithmic feed.</span></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igReels" data-feature="igReels"><span><strong>Block Reels and Explore</strong><br><span class="muted">Their tabs are hidden and their pages redirect to the feed.</span></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igSuggested" data-feature="igSuggested"><span><strong>Hide “Suggested for you”</strong><br><span class="muted">Suggested posts, account carousels, and everything after “You’re all caught up”.</span></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igAds" data-feature="igAds"><span><strong>Hide sponsored posts</strong></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igCheckpoint" data-feature="igCheckpoint"><span><strong>Checkpoint card while scrolling</strong><br><span class="muted">A card in the feed every so often with the post count and minutes so far, and a way out. Not a block.</span></span></label>
+      <div class="field"><label for="igEvery">Every</label>
+        <select id="igEvery"><option value="10">10 posts</option><option value="15">15 posts</option><option value="20">20 posts</option><option value="30">30 posts</option></select></div>
+    </div>
+  </details>
+
+  <!-- =============================== Safari ================================== -->
+  <details class="cat" id="cat-safari">
+    <summary><span class="cat-title">Safari &amp; privacy</span><span class="cat-sub">Claude hand-off, data</span></summary>
+    <div class="cat-body">
+      <label class="row"><input type="checkbox" id="claudeOn"><span><strong>Offer “Talk it through with Claude”</strong><br>
+        <span class="muted">Adds a button to the after-work card, the timer and the pause screen. It writes a short message about the moment (time, feeling, your plan — never a site), copies it, and opens claude.ai for you to paste. Nothing is sent until you press send there.</span></span></label>
+      <p class="muted" style="margin-top:12px"><strong>Private tabs:</strong> iOS handles this better than an extension can —
+        Settings → Apps → Safari → <em>Close Tabs</em> → After One Day, and
+        <em>Require Face ID to Unlock Private Browsing</em>.</p>
+      <details class="sub" id="sub-shortcuts">
+        <summary>Your own shortcuts</summary>
+        <p class="muted">Every <em>Optional link</em> field in Kindgate — morning
+          steps, evening plans, wind-down audio — accepts a <code>shortcuts://</code>
+          link. So any button here can run a shortcut of yours: start a timer, set a
+          reminder, play a playlist, turn on a Focus, log to a note.</p>
+        <p class="muted">Build the link, copy it, paste it into whichever field you want:</p>
+        <div class="field"><label for="scbName">Shortcut</label><input type="text" id="scbName" placeholder="Exact name" maxlength="60"></div>
+        <div class="field"><label for="scbInput">Input (optional)</label><input type="text" id="scbInput" placeholder="e.g. 90" maxlength="60"></div>
+        <input type="text" id="scbOut" readonly class="mono">
+        <div class="btnrow">
+          <button type="button" id="scbCopy">Copy link</button>
+          <button type="button" id="scbOpen">Try it</button>
+        </div>
+        <p class="muted">In the shortcut, use <em>Shortcut Input</em> wherever you want
+          that value to land. Name it something short and unmistakable — the link
+          matches on the name, so renaming it later breaks the link.</p>
+        <div class="field"><label for="scInstall">Install link</label><input type="url" id="scInstall" placeholder="iCloud share link" inputmode="url"></div>
+        <p class="muted">Made one worth keeping? In Shortcuts, tap ⋯ → Share →
+          Copy iCloud Link, and paste it here so it’s one tap to reinstall — on a new
+          phone, or for anyone you pass this extension to.</p>
+        <button type="button" id="scInstallOpen">Open install link</button>
+      </details>
+
+      <p class="muted" style="margin-top:12px">Nothing in this extension is sent anywhere. All data lives in the extension’s storage on this phone.</p>
+    </div>
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>

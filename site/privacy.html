@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — Kindgate</title>
+<meta name="description" content="Kindgate has no account, no server and no analytics. Everything the extension stores stays on your device.">
+<link rel="canonical" href="https://kindgate.app/privacy.html">
+<meta name="theme-color" content="#F6F1E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171512" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="wrap">
+  <header class="site-header">
+    <a class="wordmark" href="/">
+      <img src="/icon.svg" width="34" height="34" alt="">
+      Kindgate
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/">Home</a>
+    </nav>
+  </header>
+
+  <main id="main" class="prose">
+    <h1>Privacy</h1>
+    <p class="updated">Last updated 20 September 2026.</p>
+
+    <p>Kindgate has no account, no server and no analytics. There is nowhere for your data to go, because there is no &ldquo;us&rdquo; to send it to.</p>
+
+    <h2>What the extension stores</h2>
+    <p>Everything Kindgate keeps is written to Safari&rsquo;s local extension storage on your device, using the browser&rsquo;s <code>storage</code> permission. That includes:</p>
+    <ul>
+      <li>your settings — check-in interval, morning steps, coffee time, warm-screen hour, any Shortcuts links you add;</li>
+      <li>your check-in log — timestamps, post and minute counts, and the site involved.</li>
+    </ul>
+    <p>The check-in log can only ever name two sites: <code>youtube.com</code> and <code>instagram.com</code>. It is not a browsing history and cannot become one. You can copy the log out or clear it from the extension&rsquo;s popup at any time.</p>
+
+    <h2>What the extension does not do</h2>
+    <ul>
+      <li>No network requests of its own. Kindgate never sends your settings or your log anywhere.</li>
+      <li>No account, no sign-in, no identifiers, no advertising.</li>
+      <li>No syncing between devices. Uninstalling the extension removes what it stored.</li>
+    </ul>
+
+    <h2>Why it runs on every site</h2>
+    <p>Some of what Kindgate does — the warm evening screen, the pause and the check-in — has to work wherever you are browsing, so the extension is granted access to the pages you visit. That access is used to change how a page looks in front of you. Page content is never read for any other purpose, never stored, and never transmitted.</p>
+
+    <h2>This website</h2>
+    <p>kindgate.app is a set of static files. It sets no cookies, runs no analytics and no tracking scripts, and has no login. The hosting provider keeps short-lived request logs, including IP addresses, for security and abuse prevention; that is standard for any web host and is not accessible to us as an analytics product.</p>
+    <p>The page loads its two typefaces from Google Fonts, which means your browser makes a request to <code>fonts.googleapis.com</code> and <code>fonts.gstatic.com</code>. That is the only third-party request on this site.</p>
+
+    <h2>Children</h2>
+    <p>Kindgate is not directed at children under 13 and collects no personal information from anyone.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the date at the top changes with it. The full history is public in the source repository.</p>
+
+    <h2>Contact</h2>
+    <p>Questions: <a href="mailto:hello@kindgate.app">hello@kindgate.app</a>.</p>
+  </main>
+
+  <footer class="site-footer">
+    <a class="wordmark" href="/" style="font-size:20px">
+      <img src="/icon.svg" width="26" height="26" alt="">
+      Kindgate
+    </a>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="/privacy.html">Privacy</a>
+      <a href="https://github.com/IlijaVorontsov/kindgate">Source</a>
+      <a href="mailto:hello@kindgate.app">Contact</a>
+    </nav>
+    <p>Not affiliated with YouTube or Instagram.</p>
+  </footer>
+</div>
+
+</body>
+</html>

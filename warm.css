@@ -1,0 +1,15 @@
+/* Kindgate — Warm screen at night.
+   One overlay element, no page styles touched. `multiply` keeps text contrast
+   (it scales every channel down) instead of washing the page out the way a
+   plain translucent sheet would. */
+#kg-warm {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  background: #fff;
+  transition: background-color 1.2s linear;
+  will-change: background-color;
+}
+@media print { #kg-warm { display: none !important; } }
