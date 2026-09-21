@@ -93,7 +93,8 @@ def cmd_check():
         ["git", "ls-files", "--others", "--exclude-standard"], cwd=ROOT, capture_output=True, text=True
     ).stdout.split()
     code = sorted({f for f in changed
-                   if not f.startswith("site/") and any(Path(f).match(g) for g in CODE_GLOBS)})
+                   if not f.startswith(("site/", "test/"))
+                   and any(Path(f).match(g) for g in CODE_GLOBS)})
     frag = sorted({f for f in changed if f.startswith("changelog.d/") and f != "changelog.d/README.md"})
     if code and not frag:
         print("changelog: code changed but no fragment added in changelog.d/:", file=sys.stderr)

@@ -434,6 +434,8 @@ app/               The container app: setup checklist, Swift, overlaid on the
                    project the converter generates
 build.sh           Convert, sign and install onto a paired iPhone, or archive for TestFlight
 scripts/           changelog.py (release notes) and app-icon.sh (the app icon build.sh installs)
+test/              Static checks, behaviour tests per script, the harness, and the
+                   on-device QA checklist; package.json exists only for these
 ```
 
 ## Brand
@@ -467,10 +469,18 @@ qlmanage -t -s 512 -o /tmp/icon images/icon.svg   # repeat per size
 
 ## Development
 
-Plain JavaScript and CSS. No bundler, no package manager, no test runner.
-Content scripts run in Safari on iOS, so the only real test is a device:
-`bash build.sh`, then look. Safari's Web Inspector on the Mac, under Develop,
-then your iPhone, shows the live DOM of the phone's Safari.
+Plain JavaScript and CSS. No bundler, no build step. Content scripts run in
+Safari on iOS, so the final test is a device: `bash build.sh`, then look.
+Safari's Web Inspector on the Mac, under Develop, then your iPhone, shows the
+live DOM of the phone's Safari.
+
+Before that, `npm test` runs every content script against a fake page with a
+controllable clock, storage and location, and checks the repository against
+its own rules (manifest, permissions, palette, what ships). It needs Node 22
+and one `npm install` for jsdom, the only dependency, which is dev-only and
+never part of the extension. `test/README.md` explains the harness and
+`test/QA.md` is the on-device checklist. CI runs the same tests on every pull
+request.
 
 `CLAUDE.md` carries the working conventions. User-visible changes need a
 fragment in `changelog.d/`; see that folder's README.
