@@ -1,0 +1,1 @@
+- If the extension's settings can't be read (for example in a tab left open across an update), pages now load normally instead of showing the night-time or pause screen with default settings.
