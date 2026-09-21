@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Kindgate",
   "version": "6.3",
-  "description": "YouTube without Shorts or the Home feed; Instagram without ads, limited to accounts you follow; plus a one-tap cue check-in on every open (Safari); plus a warm, dimmed screen at night.",
+  "description": "YouTube without Shorts or the Home feed; Instagram limited to the accounts you follow; plus a one-tap cue check-in on every open (Safari); plus a warm, dimmed screen at night.",
   "icons": {
     "48": "images/icon-48.png",
     "96": "images/icon-96.png",
