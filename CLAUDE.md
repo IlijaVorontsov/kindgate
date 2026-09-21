@@ -22,6 +22,10 @@ accurate when behaviour changes.
   no other stylesheet should carry a raw hex.
 - `fonts/` — Fraunces and Instrument Sans, Latin subsets, OFL 1.1. Declared
   in `web_accessible_resources` so injected CSS can reach them.
+- `lists/` — bundled pause lists (adult, social, gambling), one domain per
+  line, MIT from StevenBlack/hosts (`lists/LICENSE`). Regenerated with
+  `python3 scripts/lists.py`; do not edit by hand. Also in
+  `web_accessible_resources` so `pause.js` can `fetch` them.
 - `background.js` — status heartbeat for the container app. Sends a native
   message when the extension starts and when a content script reports a site,
   which is the only way the app can know either.
