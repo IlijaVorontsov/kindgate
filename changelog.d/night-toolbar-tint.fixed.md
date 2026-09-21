@@ -1,2 +1,3 @@
 - Safari's address bar and toolbar now match the pause, night, timer and morning screens instead of staying white underneath them.
 - Text on those screens fades into the background at the top and bottom edges instead of being cut off by Safari's bars.
+- The warm night overlay steps aside while a Kindgate screen is up, so Safari's toolbar no longer picks up its peach tint on the black night page.

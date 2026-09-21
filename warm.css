@@ -13,3 +13,7 @@
   will-change: background-color;
 }
 @media print { #kg-warm { display: none !important; } }
+/* Under a Kindgate full-screen page (pause, night, timer, morning) the overlay
+   has nothing to warm, and Safari's toolbar tint sampled it instead of the
+   page's black theme-color. Hide it until the page closes. */
+html.kg-checkin-open #kg-warm { display: none !important; }
