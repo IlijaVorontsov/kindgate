@@ -51,7 +51,11 @@
   // localStorage — the one place this log must never be readable from.
   const memory = new Map();
   async function load(keys) {
-    if (api) { try { return await api.get(keys); } catch { /* fall through */ } }
+    // A failed read must not fall through to the empty in-memory map: the
+    // caller would then run on the built-in defaults and ignore what the
+    // user actually set (a switched-off night mode, the allow-list). Let it
+    // throw so the page loads unguarded instead.
+    if (api) return api.get(keys);
     const o = {}; for (const k of keys) if (memory.has(k)) o[k] = memory.get(k); return o;
   }
   async function save(obj) {
