@@ -62,7 +62,11 @@
   // localStorage, where that site could read them straight back out.
   const memory = new Map();
   async function load(keys) {
-    if (api) { try { return await api.get(keys); } catch { /* fall through */ } }
+    // A failed read must not fall through to the empty in-memory map: the
+    // caller would then run on the built-in defaults and ignore what the
+    // user actually set (a switched-off night mode, the allow-list). Let it
+    // throw so the page loads unguarded instead.
+    if (api) return api.get(keys);
     const out = {};
     for (const k of keys) if (memory.has(k)) out[k] = memory.get(k);
     return out;
