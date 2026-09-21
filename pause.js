@@ -83,6 +83,29 @@
     return entries.some((e) => e.includes('.') ? (HOST === e || HOST.endsWith('.' + e)) : HOST.includes(e));
   }
 
+  // Bundled lists (lists/*.txt, one domain per line, from StevenBlack/hosts
+  // under MIT). Read only when a list is switched on and the hand-written
+  // list did not already match, so pages that never pause pay nothing. The
+  // adult list is ~48k lines; a linear scan against the host's parents is a
+  // few milliseconds and needs no Set of the whole file.
+  const LIST_NAMES = ['adult', 'social', 'gambling'];
+  async function inList(lists) {
+    const on = LIST_NAMES.filter((n) => lists && lists[n] === true);
+    if (!on.length) return false;
+    const rt = (typeof browser !== 'undefined' && browser.runtime) || (typeof chrome !== 'undefined' && chrome.runtime);
+    if (!rt || typeof rt.getURL !== 'function') return false;
+    // The host and every parent of it, so a listed domain covers its subdomains.
+    const labels = HOST.split('.');
+    const parents = new Set(labels.map((_, i) => labels.slice(i).join('.')));
+    for (const name of on) {
+      try {
+        const text = await (await fetch(rt.getURL('lists/' + name + '.txt'))).text();
+        for (const line of text.split('\n')) if (line && line[0] !== '#' && parents.has(line)) return true;
+      } catch { /* a missing or unreadable list pauses nothing */ }
+    }
+    return false;
+  }
+
   // ---- goals --------------------------------------------------------------------------
   // Empty means "no rule"; only a real HH:MM becomes minutes.
   const toMin = (hhmm) => {
@@ -387,8 +410,9 @@
   };
 
   async function start() {
-    const data = await load(['fgPauseOn', 'fgPauseSites', 'fgPauseSeconds', 'fgPauseGoal', 'fgPauseAlts', 'fgPauseLog', 'fgPauseLast', 'fgClaudeOn', 'fgWindows']);
-    if (data.fgPauseOn === false || !matches(data.fgPauseSites)) { unveil(); return; }
+    const data = await load(['fgPauseOn', 'fgPauseSites', 'fgPauseLists', 'fgPauseSeconds', 'fgPauseGoal', 'fgPauseAlts', 'fgPauseLog', 'fgPauseLast', 'fgClaudeOn', 'fgWindows']);
+    if (data.fgPauseOn === false) { unveil(); return; }
+    if (!matches(data.fgPauseSites) && !(await inList(data.fgPauseLists))) { unveil(); return; }
     // A short grace after "continue anyway", so navigating within the site
     // doesn't re-pause every page.
     if (Date.now() - Number(data.fgPauseLast || 0) < 10 * 60 * 1000) { unveil(); return; }

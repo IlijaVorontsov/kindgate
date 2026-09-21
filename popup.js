@@ -324,9 +324,12 @@
   }
   function saveAlts() { const o = {}; for (const k of altIds) { const v = gm('alt_' + k).value.trim(); if (v) o[k] = v; } api.set({ fgPauseAlts: o }); }
 
-  api.get(['fgPauseOn', 'fgPauseSites', 'fgPauseSeconds', 'fgPauseGoal', 'fgPauseAlts', 'fgPauseLog', 'fgPausePin']).then(async (d) => {
+  const listIds = { adult: 'listAdult', social: 'listSocial', gambling: 'listGambling' };
+  function saveLists() { const o = {}; for (const k in listIds) o[k] = gm(listIds[k]).checked; api.set({ fgPauseLists: o }); }
+  api.get(['fgPauseOn', 'fgPauseSites', 'fgPauseLists', 'fgPauseSeconds', 'fgPauseGoal', 'fgPauseAlts', 'fgPauseLog', 'fgPausePin']).then(async (d) => {
     gm('pauseOn').checked = !(d && d.fgPauseOn === false);
     gm('pauseSites').value = ((d && d.fgPauseSites) || []).join('\n');
+    const lists = (d && d.fgPauseLists) || {}; for (const k in listIds) gm(listIds[k]).checked = lists[k] === true;
     gm('pauseSeconds').value = String((d && d.fgPauseSeconds) || 15);
     const g = Object.assign({ mode: 'reduce', weekendsOnly: false, notAtWork: false, workStart: '09:00', workEnd: '17:00', notAfter: '', notBefore: '' }, (d && d.fgPauseGoal) || {});
     gm('goalMode').value = g.mode; gm('goalWeekends').checked = !!g.weekendsOnly; gm('goalWork').checked = !!g.notAtWork;
@@ -341,6 +344,7 @@
   gm('pauseOn').addEventListener('change', () => api.set({ fgPauseOn: gm('pauseOn').checked }));
   gm('pauseSites').addEventListener('change', () => api.set({ fgPauseSites: gm('pauseSites').value.split(/\n+/).map((s) => s.trim()).filter(Boolean) }));
   gm('pauseSeconds').addEventListener('change', () => api.set({ fgPauseSeconds: Number(gm('pauseSeconds').value) }));
+  for (const k in listIds) gm(listIds[k]).addEventListener('change', saveLists);
   for (const id of ['goalMode', 'goalWeekends', 'goalWork', 'goalWorkStart', 'goalWorkEnd', 'goalNotAfter', 'goalNotBefore']) gm(id).addEventListener('change', saveGoal);
   for (const k of altIds) gm('alt_' + k).addEventListener('change', saveAlts);
   gm('pinSet').addEventListener('click', async () => {

@@ -198,6 +198,13 @@
           <summary>Sites</summary>
           <textarea id="pauseSites" rows="4" placeholder="One per line. A word matches any site containing it; a domain matches that site." style="width:100%"></textarea>
           <p class="muted">Leave empty to use the built-in list of common adult sites.</p>
+          <p class="muted">Or switch on a ready-made list. They ship with the extension and update with it, never on their own.</p>
+          <label class="row"><input type="checkbox" id="listAdult">
+            <span><strong>Adult sites</strong><br><span class="muted">About 48,000 domains.</span></span></label>
+          <label class="row"><input type="checkbox" id="listSocial">
+            <span><strong>Social feeds</strong><br><span class="muted">Facebook, Instagram, TikTok, X, Reddit and the like. Not chat apps.</span></span></label>
+          <label class="row"><input type="checkbox" id="listGambling">
+            <span><strong>Gambling</strong><br><span class="muted">Casinos, betting, lotteries.</span></span></label>
           <div class="field"><label for="pauseSeconds">Pause length</label>
             <select id="pauseSeconds"><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option></select></div>
         </details>
