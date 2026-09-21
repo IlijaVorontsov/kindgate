@@ -31,6 +31,8 @@ accurate when behaviour changes.
 - `build.sh` — converts the folder to an Xcode project in `../Kindgate-Xcode`,
   builds and installs on the paired iPhone. Writes `build.log` (ignored).
 - `CHANGELOG.md`, `changelog.d/`, `scripts/changelog.py` — release notes, see below.
+- `site/` — the kindgate.app website (Cloudflare Pages), see `site/README.md`.
+  Not part of the extension; `changelog.py check` ignores it.
 
 Strategy, market research, pricing and go-to-market notes are **not** kept in
 this repository and must not be committed to it, in any branch. They live
