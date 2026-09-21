@@ -71,4 +71,14 @@
   --kg-radius-card: 16px;
   --kg-radius-control: 14px;
   --kg-radius-pill: 999px;
+
+  /* Edge fade. Full-screen pages scroll under Safari's bars, so their
+   * scroller is masked to fade text into the page colour at both ends
+   * instead of cutting it off on a hard line. Used as a mask, so the
+   * colours here are only alpha; the page's own background shows through. */
+  --kg-fade-top: 36px;
+  --kg-fade-bottom: 64px;
+  --kg-edge-fade: linear-gradient(to bottom,
+    transparent 0, black var(--kg-fade-top),
+    black calc(100% - var(--kg-fade-bottom)), transparent 100%);
 }
