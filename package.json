@@ -1,0 +1,17 @@
+{
+  "name": "kindgate-tests",
+  "private": true,
+  "description": "Test and QA harness for the Kindgate Safari extension. The extension itself has no build step and no dependencies; this file exists only so `npm test` can run the suite in test/.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test 'test/*.test.js'",
+    "test:watch": "node --test --watch 'test/*.test.js'",
+    "check": "node --test test/static.test.js",
+    "qa": "npm test && python3 scripts/changelog.py check"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.0"
+  }
+}

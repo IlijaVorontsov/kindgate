@@ -10,6 +10,9 @@ xcuserdata/
 # macOS
 .DS_Store
 
+# Test harness dependencies (dev only, see test/README.md)
+node_modules/
+
 # Claude Code worktrees
 .claude/worktrees/
 
