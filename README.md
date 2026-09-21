@@ -77,6 +77,12 @@ the connected phone. Re-run it after editing any file here; it copies the
 sources into the Xcode project, so edit *these* files rather than the copies
 inside the project. The full log lands in `build.log`.
 
+With a paid developer membership the same script also produces TestFlight
+builds: `bash build.sh --release` archives and exports a signed `.ipa`, and
+`bash build.sh --upload` sends it to App Store Connect. The App Store Connect
+key, team id and tester checklist are in the private ops repo's
+[TestFlight runbook](https://github.com/IlijaVorontsov/kindgatex/blob/main/docs/testflight.md).
+
 Then open Kindgate on the phone. Its [setup checklist](#the-container-app)
 covers enabling the extension, allowing the sites and deleting the apps, and
 each step turns green by itself once it is done.
@@ -405,7 +411,7 @@ fonts/             Fraunces + Instrument Sans (Latin subsets, OFL 1.1)
 images/            Icons; icon.svg is the master, the PNGs render from it
 
 youtube.js/.css    Shorts and Home-feed removal, youtube.com and m.youtube.com
-instagram.js/.css  Following-only, ad-free feed for instagram.com
+instagram.js/.css  Following-only feed for instagram.com
 checkin.js/.css    The cue check-in card, both sites
 pause.js/.css      The pause screen for sites you list, all sites
 warm.js/.css       The warm night overlay, all sites
@@ -417,9 +423,9 @@ background.js      Status heartbeat: tells the container app the extension is on
 
 app/               The container app: setup checklist, Swift, overlaid on the
                    project the converter generates
-build.sh           Convert, sign, build and install onto a paired iPhone
+build.sh           Convert, sign and install onto a paired iPhone, or archive for TestFlight
 site/              The kindgate.app website (Cloudflare Pages)
-scripts/           Release tooling; see CHANGELOG.md and changelog.d/
+scripts/           changelog.py (release notes) and app-icon.sh (the app icon build.sh installs)
 ```
 
 ## Brand
