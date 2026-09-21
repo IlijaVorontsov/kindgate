@@ -143,13 +143,36 @@
   // site's tint (white on YouTube) would otherwise sit under a black night
   // page. Safari honours the first matching theme-color meta, so ours goes to
   // the front of <head> while a page is up and comes out again on close.
+  // Safari does not always re-read a meta that was added after load, and on
+  // iOS 26 the glass bars also show the page's own background underneath, so
+  // the host's theme-color metas are rewritten as well and <html>/<body> are
+  // painted the same colour while the page is up. Everything is put back on
+  // close.
   let themeMeta = null;
+  let themeSaved = null;
   function themeColor(color) {
-    if (!color) { if (themeMeta) themeMeta.remove(); themeMeta = null; return; }
+    const docEl = document.documentElement;
+    if (!color) {
+      if (themeMeta) themeMeta.remove(); themeMeta = null;
+      if (themeSaved) {
+        for (const [m, c] of themeSaved.metas) { if (c === null) m.removeAttribute('content'); else m.setAttribute('content', c); }
+        for (const [n, v] of themeSaved.bg) { if (n) n.style.setProperty('background-color', v || '', ''); }
+        themeSaved = null;
+      }
+      return;
+    }
     if (!themeMeta) { themeMeta = document.createElement('meta'); themeMeta.name = 'theme-color'; }
     themeMeta.content = color;
-    const head = document.head || document.documentElement;
+    const head = document.head || docEl;
     if (head && head.firstChild !== themeMeta) head.insertBefore(themeMeta, head.firstChild);
+    if (!themeSaved) {
+      themeSaved = { metas: [], bg: [[docEl, docEl.style.backgroundColor], [document.body, document.body ? document.body.style.backgroundColor : '']] };
+      for (const m of document.querySelectorAll('meta[name="theme-color"]')) {
+        if (m !== themeMeta) themeSaved.metas.push([m, m.getAttribute('content')]);
+      }
+    }
+    for (const [m] of themeSaved.metas) m.setAttribute('content', color);
+    for (const [n] of themeSaved.bg) { if (n) n.style.setProperty('background-color', color, 'important'); }
   }
   // A brand token from brand.css, so the tint always matches the page.
   const brand = (name, fallback) =>
