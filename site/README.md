@@ -1,7 +1,8 @@
 # kindgate.app — the website
 
-A static site. No build step, no framework, no JavaScript. Everything in this
-folder is served as-is.
+A static site. No build step, no framework, no JavaScript of its own. The only
+script on the live site is Cloudflare's email decoder (see below). Everything
+in this folder is served as-is.
 
 ```
 site/
@@ -84,13 +85,13 @@ the repo (the extension source is in the same repository).
   |---|---|---|
   | TXT | `_dmarc` | `v=DMARC1; p=quarantine; rua=mailto:hello@kindgate.app` |
 
-- **Turn off Email Address Obfuscation** (the domain → **Scrape Shield**).
-  With it on, Cloudflare rewrites every `mailto:` link into a
-  `/cdn-cgi/l/email-protection` URL and injects a script to decode it — and
-  the site's Content-Security-Policy has no `script-src`, so the script is
-  blocked and the Contact links stop being mail links. The pages also wrap
-  each address in `<!--email_off--> … <!--/email_off-->`, which Cloudflare
-  honours, so the links survive even if the setting is left on.
+- **Keep Email Address Obfuscation on** (the domain → **Scrape Shield**).
+  It hides `hello@kindgate.app` from scrapers: Cloudflare rewrites each
+  `mailto:` link into a `/cdn-cgi/l/email-protection` URL and injects a small
+  same-origin script that restores the real link in the browser. Visitors
+  without JavaScript land on a Cloudflare page that reveals the address. The
+  CSP in `_headers` allows `script-src 'self'` for exactly this; drop that and
+  the decoder is blocked and the Contact links break.
 - Leave the orange cloud (proxy) **on**. Caching and TLS come with it.
 - Optionally turn on **Always Use HTTPS** and **Automatic HTTPS Rewrites**
   under SSL/TLS → Edge Certificates.
@@ -122,7 +123,7 @@ prefer Pages is purely that the DNS already lives at Cloudflare.
 - [x] **Contact address.** `hello@kindgate.app` appears in `index.html` and
       `privacy.html`; Email Routing (above) forwards it.
 - [ ] **DMARC record** (above). Email Routing does not add it.
-- [ ] **Email Address Obfuscation off** (above), or the Contact links break.
+- [x] **Email Address Obfuscation on** (above); the CSP allows its decoder.
 - [x] **Source link.** Points at `github.com/IlijaVorontsov/kindgate`, the
       public source repository. The Pages project must deploy from that
       repository too, or the live site keeps the old link.
