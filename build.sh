@@ -1,6 +1,14 @@
 #!/bin/bash
-# Kindgate — convert, build, and install onto the connected iPhone.
-# Run:  bash build.sh   (from anywhere; the script finds its own folder)
+# Kindgate — convert the web extension to an Xcode project, then either
+# install it on the paired iPhone or build it for TestFlight.
+#
+#   bash build.sh                 Debug build, install over USB (the default)
+#   bash build.sh --release       Release archive, exported as a signed .ipa
+#   bash build.sh --upload        ...and upload it to App Store Connect
+#
+# --release and --upload need the paid Apple Developer Program membership and
+# an App Store Connect API key. The runbook lives in the private ops repo:
+# https://github.com/IlijaVorontsov/kindgatex/blob/main/docs/testflight.md
 #
 # Layout: the repo root is the web extension. app/ holds the container app's
 # own files (Swift, storyboard, entitlements) and is overlaid onto the project
@@ -24,8 +32,18 @@ APP_GROUP="group.$BUNDLE"
 STRIP="app docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md"
 STAGE_EXCLUDES=(--exclude '.*'); for s in $STRIP; do STAGE_EXCLUDES+=(--exclude "$s"); done
 
+MODE=device
+for arg in "$@"; do
+  case "$arg" in
+    --release) MODE=release;;
+    --upload)  MODE=upload;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0;;
+    *) echo "Unknown option: $arg (try --help)"; exit 1;;
+  esac
+done
+
 exec > >(tee "$LOG") 2>&1
-echo "== Kindgate build $(date) =="
+echo "== Kindgate build ($MODE) $(date) =="
 
 step() { echo; echo "---- $* ----"; }
 
@@ -124,42 +142,165 @@ sed -i '' \
   "$PBX"
 grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$PBX" | sort -u
 
+step "App icon"
+# The converter ships Apple's placeholder, which is also transparent and would
+# be rejected on upload. Replace it every build so it can never go stale.
+bash "$SRC/scripts/app-icon.sh" "$PROJDIR/Kindgate/Assets.xcassets/AppIcon.appiconset" || exit 6
+
+step "Versions"
+# manifest.json is the single source of the release number. The build number
+# only has to rise: App Store Connect refuses a build number it has already
+# seen, and a rejected upload costs a whole archive.
+VERSION=$(python3 -c "import json;print(json.load(open('$SRC/manifest.json'))['version'])") || exit 1
+BUILD="${KINDGATE_BUILD:-$(date +%Y%m%d%H%M)}"
+echo "Version $VERSION, build $BUILD"
+
 step "Signing identity"
 # The team ID is the certificate's OU, not the ID in the common name.
-CERT=$(security find-identity -v -p codesigning 2>/dev/null | grep -o 'Apple Development: [^"]*' | head -1)
-TEAM=$(security find-certificate -c "$CERT" -p 2>/dev/null | \
-  openssl x509 -noout -subject -nameopt sep_multiline 2>/dev/null | \
-  sed -n 's/^ *OU=//p' | head -1)
+# Enrolling in the Developer Program creates a NEW team, so the personal-team
+# certificate that built the device version has the wrong OU for distribution.
+# DEVELOPMENT_TEAM in the environment always wins.
+find_team() {
+  local cert
+  cert=$(security find-identity -v -p codesigning 2>/dev/null | grep -o "$1: [^\"]*" | head -1)
+  [ -n "$cert" ] || return 1
+  security find-certificate -c "$cert" -p 2>/dev/null | \
+    openssl x509 -noout -subject -nameopt sep_multiline 2>/dev/null | \
+    sed -n 's/^ *OU=//p' | head -1
+}
+TEAM="$DEVELOPMENT_TEAM"
+if [ -z "$TEAM" ] && [ "$MODE" != device ]; then
+  TEAM=$(find_team "Apple Distribution")
+  [ -n "$TEAM" ] && echo "Using the Apple Distribution certificate"
+fi
+[ -z "$TEAM" ] && TEAM=$(find_team "Apple Development")
 if [ -z "$TEAM" ]; then
-  echo "No Apple Development certificate found yet."
-  echo "Opening the project in Xcode: add your Apple ID (Xcode > Settings > Accounts),"
-  echo "then in Signing & Capabilities pick your Personal Team for BOTH targets and press Run."
+  echo "No signing certificate found yet."
+  echo "Open Xcode > Settings > Accounts, add your Apple ID, then in Signing &"
+  echo "Capabilities pick your team for BOTH targets. Or set DEVELOPMENT_TEAM=<team id>."
   open "$PROJ"; exit 2
 fi
 echo "Team: $TEAM"
 
-step "Connected iPhone"
-xcrun devicectl list devices
-DEVICE=$(xcrun devicectl list devices --json-output /tmp/kindgate-devices.json >/dev/null 2>&1 && \
-  python3 -c "import json;d=json.load(open('/tmp/kindgate-devices.json'))['result']['devices'];p=[x for x in d if x.get('hardwareProperties',{}).get('platform')=='iOS' and x.get('connectionProperties',{}).get('pairingState')=='paired'];print(p[0]['identifier'] if p else '')")
-if [ -z "$DEVICE" ]; then
-  echo "No paired iPhone found. Plug it in, unlock it, tap Trust, then re-run."; exit 3
+COMMON_SETTINGS=(
+  CODE_SIGN_STYLE=Automatic
+  DEVELOPMENT_TEAM="$TEAM"
+  MARKETING_VERSION="$VERSION"
+  CURRENT_PROJECT_VERSION="$BUILD"
+)
+
+if [ "$MODE" = device ]; then
+  step "Connected iPhone"
+  xcrun devicectl list devices
+  DEVICE=$(xcrun devicectl list devices --json-output /tmp/kindgate-devices.json >/dev/null 2>&1 && \
+    python3 -c "import json;d=json.load(open('/tmp/kindgate-devices.json'))['result']['devices'];p=[x for x in d if x.get('hardwareProperties',{}).get('platform')=='iOS' and x.get('connectionProperties',{}).get('pairingState')=='paired'];print(p[0]['identifier'] if p else '')")
+  if [ -z "$DEVICE" ]; then
+    echo "No paired iPhone found. Plug it in, unlock it, tap Trust, then re-run."; exit 3
+  fi
+  echo "Device: $DEVICE"
+
+  step "Build (this can take a few minutes the first time)"
+  xcodebuild -project "$PROJ" -scheme Kindgate -configuration Debug \
+    -destination "id=$DEVICE" -derivedDataPath "$OUT/DerivedData" \
+    -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
+    "${COMMON_SETTINGS[@]}" build | grep -E "error|warning: no|BUILD|Signing|Provisioning"
+  [ "${PIPESTATUS[0]}" = 0 ] || { echo "BUILD FAILED — see $LOG"; open "$PROJ"; exit 4; }
+
+  APP=$(find "$OUT/DerivedData/Build/Products" -name "Kindgate.app" -path "*iphoneos*" | head -1)
+  step "Install $APP"
+  xcrun devicectl device install app --device "$DEVICE" "$APP" || exit 5
+
+  echo
+  echo "== DONE =="
+  echo "On the iPhone: Settings > General > VPN & Device Management > trust your Apple ID (first time only),"
+  echo "then open Kindgate: its checklist walks through enabling the extension, allowing the sites,"
+  echo "and deleting the apps, and each step turns green by itself once done."
+  exit 0
 fi
-echo "Device: $DEVICE"
 
-step "Build (this can take a few minutes the first time)"
-xcodebuild -project "$PROJ" -scheme Kindgate -configuration Debug \
-  -destination "id=$DEVICE" -derivedDataPath "$OUT/DerivedData" \
-  -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
-  CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="$TEAM" build | grep -E "error|warning: no|BUILD|Signing|Provisioning"
-[ "${PIPESTATUS[0]}" = 0 ] || { echo "BUILD FAILED — see $LOG"; open "$PROJ"; exit 4; }
+# ---------------------------------------------------------------- distribution
 
-APP=$(find "$OUT/DerivedData/Build/Products" -name "Kindgate.app" -path "*iphoneos*" | head -1)
-step "Install $APP"
-xcrun devicectl device install app --device "$DEVICE" "$APP" || exit 5
+step "App Store Connect credentials"
+# Automatic signing cannot mint a distribution certificate or an App Store
+# provisioning profile on its own; it needs an API key to talk to App Store
+# Connect. The same key uploads the build, so there is no second credential.
+ASC_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8}"
+AUTH=()
+if [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -f "$ASC_KEY_PATH" ]; then
+  AUTH=(-authenticationKeyPath "$ASC_KEY_PATH"
+        -authenticationKeyID "$ASC_KEY_ID"
+        -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+  echo "Key $ASC_KEY_ID at $ASC_KEY_PATH"
+elif [ "$MODE" = upload ]; then
+  echo "--upload needs an App Store Connect API key. Set ASC_KEY_ID and ASC_ISSUER_ID"
+  echo "(and ASC_KEY_PATH if the .p8 is not at ~/.appstoreconnect/private_keys/)."
+  echo "See kindgatex/docs/testflight.md."
+  exit 7
+else
+  echo "No API key set. Archiving with whatever signing assets are already on"
+  echo "this Mac; if none exist the archive step will say so."
+fi
+
+step "Archive"
+ARCHIVE="$OUT/build/Kindgate-$VERSION-$BUILD.xcarchive"
+rm -rf "$ARCHIVE"
+xcodebuild -project "$PROJ" -scheme Kindgate -configuration Release \
+  -destination "generic/platform=iOS" -archivePath "$ARCHIVE" \
+  -derivedDataPath "$OUT/DerivedData" -allowProvisioningUpdates \
+  "${AUTH[@]}" "${COMMON_SETTINGS[@]}" archive | grep -E "error|warning: no|ARCHIVE|Signing|Provisioning"
+if [ "${PIPESTATUS[0]}" != 0 ]; then
+  echo "ARCHIVE FAILED — see $LOG"
+  # Automatic signing reports a missing distribution profile as a missing input
+  # file, naming a .mobileprovision it was supposed to have downloaded. That is
+  # almost always the credential gap rather than anything wrong with the code.
+  if grep -q "Build input file cannot be found.*mobileprovision" "$LOG"; then
+    echo
+    echo "No App Store provisioning profile could be downloaded for team $TEAM."
+    if [ ${#AUTH[@]} -eq 0 ]; then
+      echo "Set ASC_KEY_ID and ASC_ISSUER_ID so signing can create one; see kindgatex/docs/testflight.md."
+    else
+      echo "The key worked but the team has no App Store profile for $BUNDLE."
+      echo "Check that $BUNDLE and $BUNDLE.Extension are registered as identifiers,"
+      echo "and that DEVELOPMENT_TEAM ($TEAM) is the paid team, not the personal one."
+    fi
+  fi
+  exit 4
+fi
+
+step "Export"
+EXPORT_DIR="$OUT/build/export-$VERSION-$BUILD"
+rm -rf "$EXPORT_DIR"
+# manageAppVersionAndBuildNumber must stay off: with it on, Xcode silently
+# renumbers the build and the number in the log stops matching the upload.
+DEST=export; [ "$MODE" = upload ] && DEST=upload
+cat > "$OUT/build/ExportOptions.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>destination</key><string>$DEST</string>
+  <key>teamID</key><string>$TEAM</string>
+  <key>uploadSymbols</key><true/>
+  <key>manageAppVersionAndBuildNumber</key><false/>
+</dict>
+</plist>
+PLIST
+xcodebuild -exportArchive -archivePath "$ARCHIVE" \
+  -exportOptionsPlist "$OUT/build/ExportOptions.plist" \
+  -exportPath "$EXPORT_DIR" -allowProvisioningUpdates \
+  "${AUTH[@]}" | grep -E "error|EXPORT|Uploaded|upload"
+[ "${PIPESTATUS[0]}" = 0 ] || { echo "EXPORT FAILED — see $LOG"; exit 8; }
 
 echo
 echo "== DONE =="
-echo "On the iPhone: Settings > General > VPN & Device Management > trust your Apple ID (first time only),"
-echo "then open Kindgate: its checklist walks through enabling the extension, allowing the sites,"
-echo "and deleting the apps, and each step turns green by itself once done."
+echo "Version $VERSION, build $BUILD"
+if [ "$MODE" = upload ]; then
+  echo "Uploaded to App Store Connect. Processing takes a few minutes; the build"
+  echo "then needs export compliance answered, and an external tester group has"
+  echo "to clear Beta App Review before strangers can install it."
+else
+  echo "Archive:  $ARCHIVE"
+  echo "Exported: $EXPORT_DIR"
+  echo "Re-run with --upload to send it to App Store Connect."
+fi

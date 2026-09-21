@@ -29,7 +29,11 @@ accurate when behaviour changes.
   `build.sh` overlays this folder onto the project the converter generates, so
   the converter owns `project.pbxproj` and `app/` owns the app.
 - `build.sh` — converts the folder to an Xcode project in `../Kindgate-Xcode`,
-  builds and installs on the paired iPhone. Writes `build.log` (ignored).
+  builds and installs on the paired iPhone. `--release` archives a signed
+  `.ipa`, `--upload` sends it to App Store Connect. Writes `build.log` (ignored).
+- `scripts/app-icon.sh` — renders `images/icon.svg` into the app target's
+  icon set on every build; the converter's placeholder is transparent and
+  App Store Connect rejects it.
 - `CHANGELOG.md`, `changelog.d/`, `scripts/changelog.py` — release notes, see below.
 - `site/` — the kindgate.app website (Cloudflare Pages), see `site/README.md`.
   Not part of the extension; `changelog.py check` ignores it.
@@ -37,7 +41,9 @@ accurate when behaviour changes.
 Strategy, market research, pricing and go-to-market notes are **not** kept in
 this repository and must not be committed to it, in any branch. They live
 outside the checkout entirely. `docs/` is ignored so they cannot come back by
-accident.
+accident. Runbooks (TestFlight, release), the website and anything that needs
+a secret live in the private ops repo `IlijaVorontsov/kindgatex`, whose
+workflows act on this repo.
 
 `build.sh` stages the extension into a folder of its own before handing it to
 the converter, and the `STRIP` list is what it leaves out. Anything in the repo
