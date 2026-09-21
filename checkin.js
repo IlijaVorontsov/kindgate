@@ -264,17 +264,19 @@
     let tick = null;
     const close = () => { clearInterval(tick); themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
 
-    root.appendChild(el('div', 'kg-timer-kicker', win.name));
+    const page = el('div', 'kg-timer-page');
+    root.appendChild(page);
+    page.appendChild(el('div', 'kg-timer-kicker', win.name));
     const clock = el('div', 'kg-timer-clock', '10:00');
-    root.appendChild(clock);
+    page.appendChild(clock);
     const line = el('p', 'kg-timer-line', 'Most urges are gone before this reaches zero.');
-    root.appendChild(line);
+    page.appendChild(line);
 
     const [q, who] = pickQuote();
     const quote = el('blockquote', 'kg-timer-quote');
     quote.appendChild(el('p', null, '\u201C' + q + '\u201D'));
     quote.appendChild(el('cite', null, '\u2014 ' + who));
-    root.appendChild(quote);
+    page.appendChild(quote);
 
     const grid = el('div', 'kg-grid kg-grid-plans kg-timer-plans');
     for (const p of plans) {
@@ -285,7 +287,7 @@
           // Stay on the dark page and show the win; no blank page at night.
           clearInterval(tick);
           const s = await logWin(wins, (p.win || p.label).trim(), win.key);
-          renderSuccess(root, s, 'Goodnight. Lights low, phone face down \u2014 you\u2019re done here.');
+          renderSuccess(page, s, 'Goodnight. Lights low, phone face down \u2014 you\u2019re done here.');
           return;
         }
         close();
@@ -295,10 +297,10 @@
       });
       grid.appendChild(b);
     }
-    root.appendChild(grid);
+    page.appendChild(grid);
 
     if (data.fgClaudeOn && win.key !== 'night') {
-      root.appendChild(claudeButton('kg-chip kg-chip-plan kg-timer-claude', { window: win.name, plan: plans.map((p) => p.label.trim()).join(' / ') }));
+      page.appendChild(claudeButton('kg-chip kg-chip-plan kg-timer-claude', { window: win.name, plan: plans.map((p) => p.label.trim()).join(' / ') }));
     }
 
     const cont = el('button', 'kg-link kg-timer-continue', `Continue anyway (${CONTINUE_DELAY_S})`);
@@ -306,7 +308,7 @@
     cont.disabled = true;
     let unlock = CONTINUE_DELAY_S;
     onTap(cont, async () => { close(); if (win.key === 'night') grantTabPass(); await save({ [LAST]: Date.now(), [SNOOZE]: 0 }); });
-    root.appendChild(cont);
+    page.appendChild(cont);
 
     let done = false;
     tick = setInterval(() => {

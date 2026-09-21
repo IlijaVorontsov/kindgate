@@ -1,13 +1,17 @@
 /* Kindgate — Pause screen */
 html.kg-checkin-open { overflow: hidden !important; }
 .kg-pause {
-  position: fixed; inset: 0; z-index: 2147483647; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  position: fixed; inset: 0; z-index: 2147483647; overflow: hidden;
   background: radial-gradient(120% 90% at 50% 0%, var(--kg-ink-lift) 0%, var(--kg-ink) 60%, var(--kg-ink-deep) 100%);
   color: var(--kg-line); text-align: center;
   font-family: var(--kg-font-body);
   -webkit-font-smoothing: antialiased;
 }
-.kg-pause-page { max-width: 440px; margin: 0 auto; padding: 36px 24px calc(36px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+.kg-pause-page {
+  position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: var(--kg-edge-fade); mask-image: var(--kg-edge-fade);
+  padding: 44px max(24px, calc(50% - 220px)) calc(72px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+}
 .kg-pause-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(217,207,190,0.5); }
 .kg-pause-title { margin: 8px 0 6px; font-family: var(--kg-font-display); font-size: 24px; line-height: 1.2; font-weight: 600; color: var(--kg-cream); }
 .kg-pause-sub { margin: 0 0 14px; font-size: 14.5px; line-height: 1.45; color: rgba(217,207,190,0.72); }
