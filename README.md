@@ -271,6 +271,14 @@ and no layout breaks.
 Friction, not a wall, on sites you list. The default list covers common adult
 sites; it takes words or domains and is editable in the popup.
 
+Three ready-made lists can be switched on next to it: adult sites (about 48,000
+domains), social feeds (Facebook, Instagram, TikTok, X, Reddit and the like,
+but not chat apps) and gambling. They are snapshots of the MIT-licensed
+[StevenBlack/hosts](https://github.com/StevenBlack/hosts) category lists,
+bundled with the extension and refreshed with each release. Nothing is fetched
+from the network. A list is only read when it is on and your own list did not
+already match, so pages outside the lists pay nothing.
+
 The page is covered by a pause: a four-in, six-out breathing prompt, "what are
 you feeling?" with bored, stressed, lonely, tired, actually aroused or just
 habit, the replacement action you pre-set for that feeling, a Leave button, and
@@ -402,6 +410,7 @@ document-start redirects are right from the second visit on.
 manifest.json      Extension manifest (Manifest V3, Safari-compatible)
 brand.css          Colour and type tokens; loaded first everywhere
 fonts/             Fraunces + Instrument Sans (Latin subsets, OFL 1.1)
+lists/             Bundled pause lists: adult, social, gambling (StevenBlack/hosts, MIT)
 images/            Icons; icon.svg is the master, the PNGs render from it
 
 youtube.js/.css    Shorts and Home-feed removal, youtube.com and m.youtube.com
