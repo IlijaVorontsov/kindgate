@@ -9,7 +9,7 @@ LOG="$SRC/build.log"
 BUNDLE="app.kindgate"
 # Repo files that are not part of the extension and must not be bundled.
 # Keep in sync with CLAUDE.md when adding non-extension files to the root.
-STRIP="build.sh build.log README.md CLAUDE.md CHANGELOG.md changelog.d scripts"
+STRIP="build.sh build.log README.md CLAUDE.md CHANGELOG.md changelog.d scripts site LICENSE"
 RSYNC_EXCLUDES=(); for s in $STRIP; do RSYNC_EXCLUDES+=(--exclude "$s"); done
 
 exec > >(tee "$LOG") 2>&1
