@@ -1,16 +1,28 @@
 #!/bin/bash
 # Kindgate — convert, build, and install onto the connected iPhone.
 # Run:  bash build.sh   (from anywhere; the script finds its own folder)
+#
+# Layout: the repo root is the web extension. app/ holds the container app's
+# own files (Swift, storyboard, entitlements) and is overlaid onto the project
+# the converter generates, so the converter stays the source of truth for
+# project.pbxproj and app/ stays the source of truth for the app.
 set -o pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="$(dirname "$SRC")/Kindgate-Xcode"
+STAGE="$OUT/stage"                 # the extension alone, what the converter sees
+PROJDIR="$OUT/Kindgate"
+PROJ="$PROJDIR/Kindgate.xcodeproj"
+PBX="$PROJ/project.pbxproj"
 LOG="$SRC/build.log"
 
 BUNDLE="app.kindgate"
-# Repo files that are not part of the extension and must not be bundled.
+APP_GROUP="group.$BUNDLE"
+# Repo entries that are not part of the extension and must not be bundled.
 # Keep in sync with CLAUDE.md when adding non-extension files to the root.
-STRIP="build.sh build.log README.md CLAUDE.md CHANGELOG.md changelog.d scripts"
-RSYNC_EXCLUDES=(); for s in $STRIP; do RSYNC_EXCLUDES+=(--exclude "$s"); done
+# docs/ is ignored by git but listed anyway: an untracked local copy would
+# otherwise be rsynced straight into the signed .appex.
+STRIP="app docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md"
+STAGE_EXCLUDES=(--exclude '.*'); for s in $STRIP; do STAGE_EXCLUDES+=(--exclude "$s"); done
 
 exec > >(tee "$LOG") 2>&1
 echo "== Kindgate build $(date) =="
@@ -20,18 +32,23 @@ step() { echo; echo "---- $* ----"; }
 step "Xcode"
 xcodebuild -version || { echo "Xcode command-line tools not ready. Open Xcode once, accept the license, then re-run."; exit 1; }
 
+step "Stage the extension"
+# Only the extension goes to the converter. Staging is what keeps app/, the
+# website, the build script and the docs out of the signed .appex; a plain
+# conversion copies the whole folder and would bundle all of it.
+mkdir -p "$STAGE"
+rsync -a --delete "${STAGE_EXCLUDES[@]}" "$SRC/" "$STAGE/" || exit 1
+ls "$STAGE"
+
 step "Convert web extension -> Xcode project"
 # The converter references each resource file individually, so a file added
 # since the last conversion would never be bundled. Reconvert if any is missing.
-PBX="$OUT/Kindgate/Kindgate.xcodeproj/project.pbxproj"
 if [ -f "$PBX" ]; then
-  for f in "$SRC"/*; do
+  for f in "$STAGE"/*; do
     b=$(basename "$f")
-    case " $STRIP " in *" $b "*) continue;; esac
-    case "$b" in .*) continue;; esac
     if ! grep -q "/\* $b \*/" "$PBX"; then
       echo "$b is not in the Xcode project yet -> regenerating project"
-      rm -rf "$OUT"; break
+      rm -rf "$PROJDIR"; break
     fi
   done
 fi
@@ -39,45 +56,62 @@ fi
 # exists would fail the build with "No such file or directory".
 if [ -f "$PBX" ]; then
   for ref in $(grep -o 'path = Resources/[^;]*;' "$PBX" | sed 's/path = Resources\///;s/;$//'); do
-    if [ ! -e "$SRC/$ref" ]; then
+    if [ ! -e "$STAGE/$ref" ]; then
       echo "$ref is referenced by the Xcode project but was removed -> regenerating project"
-      rm -rf "$OUT"; break
+      rm -rf "$PROJDIR"; break
     fi
   done
 fi
-if [ ! -d "$OUT/Kindgate/Kindgate.xcodeproj" ]; then
-  rm -rf "$OUT"; mkdir -p "$OUT"
-  xcrun safari-web-extension-converter "$SRC" \
+if [ ! -d "$PROJ" ]; then
+  rm -rf "$PROJDIR"
+  xcrun safari-web-extension-converter "$STAGE" \
     --project-location "$OUT" --app-name Kindgate \
     --bundle-identifier "$BUNDLE" --ios-only --swift --no-open --force --copy-resources || exit 1
 else
   echo "Project exists, syncing resources"
-  rsync -a --delete --exclude build.sh --exclude build.log --exclude README.md "$SRC/" "$OUT/Kindgate/Kindgate Extension/Resources/"
+  rsync -a --delete "$STAGE/" "$PROJDIR/Kindgate Extension/Resources/"
 fi
-PROJ="$OUT/Kindgate/Kindgate.xcodeproj"
 ls "$PROJ" >/dev/null || { echo "Project not found at $PROJ"; exit 1; }
 
-step "Strip non-extension files from Resources"
-# A fresh conversion copies the whole source folder, so build.sh/build.log/README
-# end up inside the signed .appex. Drop the files and their project references.
-python3 - "$PROJ/project.pbxproj" $STRIP <<'PYEOF'
+step "Overlay app/ onto the generated project"
+# Replaces the converter's ViewController.swift, Main.storyboard and
+# SafariWebExtensionHandler.swift, and adds the two entitlements files.
+rsync -a "$SRC/app/" "$PROJDIR/" || exit 1
+find "$SRC/app" -type f | sed "s|$SRC/app/|  |"
+
+step "App Group entitlements"
+# Both targets need the same App Group so the extension can hand status to the
+# app. CODE_SIGN_ENTITLEMENTS is a path, so no file references are required.
+# This runs before the bundle ids are normalised, while the extension target
+# is still the only one whose id ends in .Extension.
+python3 - "$PBX" <<'PYEOF'
 import re, sys
 path = sys.argv[1]
-strip = set(sys.argv[2:])
-lines = open(path).read().splitlines(True)
-ids = set()
-for ln in lines:
-    m = re.search(r'path = Resources/([^;]+);', ln)
-    if m and m.group(1).strip() in strip:
-        ids.update(re.findall(r'\b[0-9A-F]{24}\b', ln))
-if ids:
-    keep = [ln for ln in lines if not any(i in ln for i in ids)]
-    open(path, "w").write("".join(keep))
-print("stripped %d reference id(s)" % len(ids))
+src = open(path).read()
+if src.count("CODE_SIGN_ENTITLEMENTS") >= 4:
+    print("already set"); sys.exit(0)
+out = []
+n = 0
+for ln in src.splitlines(True):
+    m = re.match(r'(\s*)PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);', ln)
+    if m:
+        indent, ident = m.group(1), m.group(2).strip('"')
+        ent = ('"Kindgate Extension/Kindgate Extension.entitlements"'
+               if ident.endswith(".Extension") else "Kindgate/Kindgate.entitlements")
+        out.append("%sCODE_SIGN_ENTITLEMENTS = %s;\n" % (indent, ent))
+        n += 1
+    out.append(ln)
+open(path, "w").write("".join(out))
+print("added CODE_SIGN_ENTITLEMENTS to %d build configurations" % n)
 PYEOF
-for f in build.sh build.log README.md; do
-  rm -f "$OUT/Kindgate/Kindgate Extension/Resources/$f"
-done
+grep -c 'CODE_SIGN_ENTITLEMENTS' "$PBX"
+grep -q "$APP_GROUP" "$PROJDIR/Kindgate/Kindgate.entitlements" || { echo "entitlements missing $APP_GROUP"; exit 1; }
+
+step "App Info.plist: URL schemes the checklist may query"
+# canOpenURL(youtube://) / canOpenURL(instagram://) tells the app whether the
+# native apps are still installed; iOS only answers for schemes listed here.
+plutil -replace LSApplicationQueriesSchemes -json '["youtube","instagram"]' "$PROJDIR/Kindgate/Info.plist" || exit 1
+plutil -extract LSApplicationQueriesSchemes json -o - "$PROJDIR/Kindgate/Info.plist"
 
 step "Normalise bundle identifiers"
 # The converter names the app target after the app name (dev.vorontsov.Kindgate)
@@ -87,8 +121,8 @@ sed -i '' \
   -e "s/PRODUCT_BUNDLE_IDENTIFIER = [A-Za-z0-9._-]*\.Extension;/PRODUCT_BUNDLE_IDENTIFIER = @@EXT@@;/g" \
   -e "s/PRODUCT_BUNDLE_IDENTIFIER = [A-Za-z0-9][A-Za-z0-9._-]*;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE;/g" \
   -e "s/PRODUCT_BUNDLE_IDENTIFIER = @@EXT@@;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE.Extension;/g" \
-  "$PROJ/project.pbxproj"
-grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$PROJ/project.pbxproj" | sort -u
+  "$PBX"
+grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$PBX" | sort -u
 
 step "Signing identity"
 # The team ID is the certificate's OU, not the ID in the common name.
@@ -127,4 +161,5 @@ xcrun devicectl device install app --device "$DEVICE" "$APP" || exit 5
 echo
 echo "== DONE =="
 echo "On the iPhone: Settings > General > VPN & Device Management > trust your Apple ID (first time only),"
-echo "then Settings > Apps > Safari > Extensions > Kindgate > On, and Allow youtube.com + instagram.com."
+echo "then open Kindgate: its checklist walks through enabling the extension, allowing the sites,"
+echo "and deleting the apps, and each step turns green by itself once done."
