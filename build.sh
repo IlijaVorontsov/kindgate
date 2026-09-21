@@ -29,7 +29,7 @@ APP_GROUP="group.$BUNDLE"
 # Keep in sync with CLAUDE.md when adding non-extension files to the root.
 # docs/ is ignored by git but listed anyway: an untracked local copy would
 # otherwise be rsynced straight into the signed .appex.
-STRIP="app docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md"
+STRIP="app docs site scripts changelog.d test node_modules package.json package-lock.json build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md"
 STAGE_EXCLUDES=(--exclude '.*'); for s in $STRIP; do STAGE_EXCLUDES+=(--exclude "$s"); done
 
 MODE=device
