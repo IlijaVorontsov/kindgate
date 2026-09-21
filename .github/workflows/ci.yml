@@ -1,0 +1,38 @@
+name: CI
+
+# The automated half of the definition of done: static checks, behaviour
+# tests and the changelog gate. The on-device pass in test/QA.md is manual.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # changelog.py check diffs against origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install test dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Static checks
+        run: npm run check
+
+      - name: Behaviour tests
+        run: npm test
+
+      - name: Changelog fragment present
+        if: github.event_name == 'pull_request'
+        run: python3 scripts/changelog.py check

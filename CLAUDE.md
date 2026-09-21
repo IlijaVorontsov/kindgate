@@ -2,9 +2,10 @@
 
 Safari web extension (iOS/iPadOS, Manifest V3) that strips YouTube and
 Instagram down to intentional use and adds cue check-ins, pause screens and a
-night-time warm overlay. Plain JavaScript and CSS, no bundler, no package
-manager, no test runner. `README.md` is the user-facing behaviour spec; keep it
-accurate when behaviour changes.
+night-time warm overlay. Plain JavaScript and CSS, no bundler, no build step.
+`README.md` is the user-facing behaviour spec; keep it accurate when behaviour
+changes. Tests live in `test/` and run with Node's built-in runner; see
+`test/README.md`.
 
 ## Layout
 
@@ -39,6 +40,11 @@ accurate when behaviour changes.
   icon set on every build; the converter's placeholder is transparent and
   App Store Connect rejects it.
 - `CHANGELOG.md`, `changelog.d/`, `scripts/changelog.py` — release notes, see below.
+- `test/` — static checks and behaviour tests (`npm test`), the harness that
+  runs a content script against a fake page (`test/harness.js`), and the
+  on-device QA checklist (`test/QA.md`). `package.json` exists only for this;
+  the extension has no dependencies. `.github/workflows/ci.yml` runs it all
+  on every PR.
 
 The kindgate.app website is not here. It lives in the private ops repo
 `IlijaVorontsov/kindgatex` under `site/`, which is what Cloudflare Pages
@@ -60,13 +66,22 @@ or folder to the root.
 
 ## Conventions
 
-- Content scripts run in Safari on iOS. Test on a real device via `bash build.sh`;
-  there is no automated test suite.
+- Content scripts run in Safari on iOS. `npm test` covers the logic against a
+  fake page; anything touching layout, selectors or Safari's event order is
+  still verified on a real device via `bash build.sh` and `test/QA.md`.
+- A behaviour change comes with a test in `test/<script>.test.js` named after
+  the README sentence it proves. A failure mode promised in a changelog
+  fragment (fails open, no loop, no NaN) gets a test too.
 - Keep each concern in its own script/css pair; register new pairs in
-  `manifest.json` with the narrowest `matches` that works.
-- Storage goes through `browser.storage.local`. No remote calls.
-- Only the `storage` permission is declared. Adding a permission needs a
-  `security` changelog fragment explaining why.
+  `manifest.json` with the narrowest `matches` that works. The static checks
+  fail on an unregistered script or a missing file.
+- Storage goes through `browser.storage.local`. No remote calls; the static
+  checks fail on `fetch` of anything but a bundled resource.
+- Only `storage` and `nativeMessaging` are declared. Adding a permission needs
+  a `security` changelog fragment explaining why, and the allowed list in
+  `test/static.test.js` updated.
+- Raw hex colours outside `brand.css` are frozen at their current count per
+  file in `test/static.test.js`; the number may only go down.
 
 ## Git workflow: feature branches, rebase
 
@@ -109,7 +124,11 @@ fragments in `changelog.d/` so parallel branches never conflict on one file.
 ## Definition of done for a PR
 
 1. Branch rebased on `origin/main`, history clean.
-2. Fragment in `changelog.d/` if the change is user-visible (`changelog.py check` passes).
-3. `README.md` updated if behaviour or limitations changed.
-4. Built and tried on device with `bash build.sh` for anything touching a
-   content script.
+2. `npm run qa` passes: static checks, behaviour tests and the changelog gate
+   (a fragment in `changelog.d/` if the change is user-visible). CI runs the
+   same on the PR.
+3. New or changed behaviour has a test.
+4. `README.md` updated if behaviour or limitations changed.
+5. Built and tried on device with `bash build.sh` for anything touching a
+   content script, following the smoke section of `test/QA.md`; the full pass
+   before a release.
