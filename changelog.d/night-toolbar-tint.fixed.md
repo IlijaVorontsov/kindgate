@@ -1,1 +1,2 @@
 - Safari's address bar and toolbar now match the pause, night, timer and morning screens instead of staying white underneath them.
+- Text on those screens fades into the background at the top and bottom edges instead of being cut off by Safari's bars.

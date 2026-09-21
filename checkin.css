@@ -90,13 +90,20 @@ html.kg-checkin-open { overflow: hidden !important; }
 /* Ten-minute timer page */
 .kg-timer {
   position: fixed; inset: 0; z-index: 2147483647;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 28px 24px calc(28px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
   background: radial-gradient(120% 90% at 50% 0%, var(--kg-ink-lift) 0%, var(--kg-ink) 60%, var(--kg-ink-deep) 100%);
   color: var(--kg-line); text-align: center;
   font-family: var(--kg-font-body);
-  -webkit-font-smoothing: antialiased; overflow-y: auto;
+  -webkit-font-smoothing: antialiased; overflow: hidden;
 }
+/* The scroller inside: centred when it fits, scrollable when it doesn't
+   (the flex spacers collapse first), faded at both ends. */
+.kg-timer-page {
+  position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: var(--kg-edge-fade); mask-image: var(--kg-edge-fade);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 44px 24px calc(72px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+}
+.kg-timer-page::before, .kg-timer-page::after { content: ""; flex: 1 0 0; }
 .kg-timer-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(217,207,190,0.55); }
 .kg-timer-clock {
   margin: 14px 0 6px; font-size: 76px; line-height: 1; font-weight: 200; letter-spacing: 0.02em;
@@ -129,12 +136,16 @@ html.kg-checkin-open { overflow: hidden !important; }
 /* "Can't sleep?" — deliberately dark and dim */
 .kg-btn-sleep { width: 100%; margin-bottom: 10px; }
 .kg-sleep {
-  position: fixed; inset: 0; z-index: 2147483647; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  position: fixed; inset: 0; z-index: 2147483647; overflow: hidden;
   background: #000; color: #b07a3a;
   font-family: var(--kg-font-body);
   -webkit-font-smoothing: antialiased;
 }
-.kg-sleep-page { max-width: 440px; margin: 0 auto; padding: 40px 24px calc(40px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+.kg-sleep-page {
+  position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: var(--kg-edge-fade); mask-image: var(--kg-edge-fade);
+  padding: 44px max(24px, calc(50% - 220px)) calc(72px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+}
 .kg-sleep-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6e4d26; }
 .kg-sleep-title { margin: 8px 0 22px; font-size: 22px; line-height: 1.25; font-weight: 600; color: #c98b45; }
 .kg-sleep-steps { margin: 0 0 26px; padding: 0 0 0 22px; }
@@ -204,12 +215,16 @@ html.kg-checkin-open { overflow: hidden !important; }
 
 /* Morning page */
 .kg-morning {
-  position: fixed; inset: 0; z-index: 2147483647; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  position: fixed; inset: 0; z-index: 2147483647; overflow: hidden;
   background: linear-gradient(180deg, #2b2119 0%, #3d2c1d 40%, #57392060 100%), #241b14;
   color: #f4e4d0; font-family: var(--kg-font-body);
   -webkit-font-smoothing: antialiased;
 }
-.kg-morning-page { max-width: 440px; margin: 0 auto; padding: 44px 24px calc(36px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+.kg-morning-page {
+  position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: var(--kg-edge-fade); mask-image: var(--kg-edge-fade);
+  padding: 44px max(24px, calc(50% - 220px)) calc(72px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+}
 .kg-morning-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(244,228,208,0.55); }
 .kg-morning-title { margin: 10px 0 8px; font-size: 26px; line-height: 1.2; font-weight: 600; color: var(--kg-cream); }
 .kg-morning-sub { margin: 0 0 24px; font-size: 15px; line-height: 1.5; color: rgba(244,228,208,0.78); }
