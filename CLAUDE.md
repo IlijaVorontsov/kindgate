@@ -39,8 +39,11 @@ accurate when behaviour changes.
   icon set on every build; the converter's placeholder is transparent and
   App Store Connect rejects it.
 - `CHANGELOG.md`, `changelog.d/`, `scripts/changelog.py` — release notes, see below.
-- `site/` — the kindgate.app website (Cloudflare Pages), see `site/README.md`.
-  Not part of the extension; `changelog.py check` ignores it.
+
+The kindgate.app website is not here. It lives in the private ops repo
+`IlijaVorontsov/kindgatex` under `site/`, which is what Cloudflare Pages
+deploys. `site` stays in `build.sh`'s `STRIP` list so a stray local copy can
+never end up inside the signed `.appex`.
 
 Strategy, market research, pricing and go-to-market notes are **not** kept in
 this repository and must not be committed to it, in any branch. They live

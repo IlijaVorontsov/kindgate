@@ -433,7 +433,6 @@ background.js      Status heartbeat: tells the container app the extension is on
 app/               The container app: setup checklist, Swift, overlaid on the
                    project the converter generates
 build.sh           Convert, sign and install onto a paired iPhone, or archive for TestFlight
-site/              The kindgate.app website (Cloudflare Pages)
 scripts/           changelog.py (release notes) and app-icon.sh (the app icon build.sh installs)
 ```
 
