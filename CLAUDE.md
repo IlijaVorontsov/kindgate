@@ -22,6 +22,12 @@ accurate when behaviour changes.
   no other stylesheet should carry a raw hex.
 - `fonts/` — Fraunces and Instrument Sans, Latin subsets, OFL 1.1. Declared
   in `web_accessible_resources` so injected CSS can reach them.
+- `background.js` — status heartbeat for the container app. Sends a native
+  message when the extension starts and when a content script reports a site,
+  which is the only way the app can know either.
+- `app/` — the container app's own files (Swift, storyboard, entitlements).
+  `build.sh` overlays this folder onto the project the converter generates, so
+  the converter owns `project.pbxproj` and `app/` owns the app.
 - `build.sh` — converts the folder to an Xcode project in `../Kindgate-Xcode`,
   builds and installs on the paired iPhone. Writes `build.log` (ignored).
 - `CHANGELOG.md`, `changelog.d/`, `scripts/changelog.py` — release notes, see below.
@@ -33,9 +39,11 @@ this repository and must not be committed to it, in any branch. They live
 outside the checkout entirely. `docs/` is ignored so they cannot come back by
 accident.
 
-Every file in the repo root except the ones `build.sh` explicitly strips is
-copied into the signed `.appex`. When adding a non-extension file or folder to
-the root, add it to the `STRIP` list in `build.sh`.
+`build.sh` stages the extension into a folder of its own before handing it to
+the converter, and the `STRIP` list is what it leaves out. Anything in the repo
+root that is not part of the extension must be in that list, or it ends up
+inside the signed `.appex`. Add to `STRIP` whenever you add a non-extension file
+or folder to the root.
 
 ## Conventions
 
