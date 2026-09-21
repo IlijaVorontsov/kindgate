@@ -195,6 +195,24 @@
   }
   const hhmm = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  // ---- Safari toolbar tint ----------------------------------------------------
+  // Safari on iOS colours its address bar and toolbar from the page's
+  // <meta name="theme-color">. Kindgate pages are fixed overlays, so the host
+  // site's tint (white on YouTube) would otherwise sit under a black night
+  // page. Safari honours the first matching theme-color meta, so ours goes to
+  // the front of <head> while a page is up and comes out again on close.
+  let themeMeta = null;
+  function themeColor(color) {
+    if (!color) { if (themeMeta) themeMeta.remove(); themeMeta = null; return; }
+    if (!themeMeta) { themeMeta = document.createElement('meta'); themeMeta.name = 'theme-color'; }
+    themeMeta.content = color;
+    const head = document.head || document.documentElement;
+    if (head && head.firstChild !== themeMeta) head.insertBefore(themeMeta, head.firstChild);
+  }
+  // A brand token from brand.css, so the tint always matches the page.
+  const brand = (name, fallback) =>
+    (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || fallback;
+
   // ---- quotes for the timer page ------------------------------------------------
   // Only quotes with a solid attribution; the internet's favourites are often
   // misattributed, and a wrong name on a wall is a small daily untruth.
@@ -238,12 +256,13 @@
     for (const v of document.querySelectorAll('video')) { try { v.pause(); } catch { /* ignore */ } }
 
     const root = el('div', 'kg-timer' + (win.key === 'night' ? ' kg-timer-night' : ''));
+    themeColor(win.key === 'night' ? '#000' : brand('--kg-ink-deep', '#151310'));
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     document.documentElement.classList.add('kg-checkin-open');
     (document.body || document.documentElement).appendChild(root);
     let tick = null;
-    const close = () => { clearInterval(tick); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { clearInterval(tick); themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
 
     root.appendChild(el('div', 'kg-timer-kicker', win.name));
     const clock = el('div', 'kg-timer-clock', '10:00');
@@ -347,12 +366,13 @@
     for (const v of document.querySelectorAll('video')) { try { v.pause(); } catch { /* ignore */ } }
 
     const root = el('div', 'kg-sleep');
+    themeColor('#000');
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     document.documentElement.classList.add('kg-checkin-open');
     (document.body || document.documentElement).appendChild(root);
     let breathTimer = null;
-    const close = () => { if (breathTimer) clearTimeout(breathTimer); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { if (breathTimer) clearTimeout(breathTimer); themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
 
     // Audio opens another app, so it navigates; everything else stays here.
     const winAndStay = async (label, msg) => {
@@ -534,6 +554,7 @@
     for (const v of document.querySelectorAll('video')) { try { v.pause(); } catch { /* ignore */ } }
 
     const root = el('div', 'kg-morning');
+    themeColor('#241b14');
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     document.documentElement.classList.add('kg-checkin-open');
@@ -541,7 +562,7 @@
     const page = el('div', 'kg-morning-page');
     root.appendChild(page);
     let tick = null;
-    const close = () => { if (tick) clearInterval(tick); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { if (tick) clearInterval(tick); themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
     const persist = () => save({ fgMorningProgress: { day: today(), done: [...done], started: prog.started, wokeAt: prog.wokeAt || 0, complete: done.size >= steps.length } });
 
     page.appendChild(el('div', 'kg-morning-kicker', `${win.name} \u00B7 ${hhmm(new Date())}`));
@@ -662,13 +683,14 @@
   // ---- card -------------------------------------------------------------------
   function mount() {
     const root = el('div', 'kg-checkin');
+    themeColor(brand('--kg-ink', '#1F1D1A'));
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     const card = el('div', 'kg-card');
     root.appendChild(card);
     document.documentElement.classList.add('kg-checkin-open');
     (document.body || document.documentElement).appendChild(root);
-    const close = () => { root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
     return { card, close };
   }
 
