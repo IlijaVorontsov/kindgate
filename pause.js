@@ -114,6 +114,24 @@
     return a <= b ? (t >= a && t < b) : (t >= a || t < b);
   }
 
+  // ---- Safari toolbar tint ----------------------------------------------------
+  // Safari on iOS colours its address bar and toolbar from the page's
+  // <meta name="theme-color">. Kindgate pages are fixed overlays, so the host
+  // site's tint (white on YouTube) would otherwise sit under a black night
+  // page. Safari honours the first matching theme-color meta, so ours goes to
+  // the front of <head> while a page is up and comes out again on close.
+  let themeMeta = null;
+  function themeColor(color) {
+    if (!color) { if (themeMeta) themeMeta.remove(); themeMeta = null; return; }
+    if (!themeMeta) { themeMeta = document.createElement('meta'); themeMeta.name = 'theme-color'; }
+    themeMeta.content = color;
+    const head = document.head || document.documentElement;
+    if (head && head.firstChild !== themeMeta) head.insertBefore(themeMeta, head.firstChild);
+  }
+  // A brand token from brand.css, so the tint always matches the page.
+  const brand = (name, fallback) =>
+    (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || fallback;
+
   // ---- UI helpers ------------------------------------------------------------------
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   // A tap, not a scroll: the touch must start and end on this node and move
@@ -185,6 +203,7 @@
 
   function mount() {
     const root = el('div', 'kg-pause');
+    themeColor(brand('--kg-ink-deep', '#151310'));
     root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true');
     const page = el('div', 'kg-pause-page');
     root.appendChild(page);
@@ -192,7 +211,7 @@
     (document.body || document.documentElement).appendChild(root);
     // The overlay is opaque, so the page can be shown behind it now.
     unveil();
-    const close = () => { root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
     return { root, page, close };
   }
 

@@ -1,0 +1,1 @@
+- Safari's address bar and toolbar now match the pause, night, timer and morning screens instead of staying white underneath them.
