@@ -168,7 +168,9 @@
     {
       "resources": [
         "fonts/*.woff2",
-        "lists/*.txt"
+        "lists/*.txt",
+        "checkin.css",
+        "pause.css"
       ],
       "matches": [
         "<all_urls>"

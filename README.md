@@ -189,20 +189,88 @@ installs that last a year.
 
 ## Privacy
 
-Everything stays on the phone, in the extension's own storage. There is no
-account, no server and no analytics.
+Everything stays on the device. There is no account, no server and no
+analytics. Your logs and settings are in the extension's own storage; the few
+things kept elsewhere on the device are listed under
+[Outside the extension's storage](#outside-the-extensions-storage) below.
 
 - The cue log records the time, the feeling and which of the two sites it was.
   It can never become a browsing history, because it only ever names those two.
 - The pause log records the time, the feeling, the outcome and whether it was
   within your goal. Never a URL, never a hostname.
-- Both can be copied out as JSON or cleared from the popup.
+- The wins log records the time, the plan you tapped, the window, and
+  `youtube`, `instagram` or `other`. Never a URL, never a hostname.
+- Each of the three logs can be copied out as JSON or cleared from the popup:
+  the cue log under Check-in & cues, the wins log under Evening plan, the pause
+  log under Pause › Patterns (behind the PIN, if one is set).
 - The pause section can be locked with a PIN, hashed with PBKDF2 and salted per
   install. It keeps the section out of casual view on a shared phone. It is a
   curtain, not a lock: the log behind it is ordinary extension storage.
 - The one thing that leaves the phone does so only when you press send. The
   optional "talk it through with Claude" button composes a short message about
   the moment, copies it to the clipboard and opens claude.ai for you to paste.
+- Kindgate's cards, pages and toasts are drawn inside a closed shadow root, so
+  the site underneath cannot read the feeling you tapped, your plans or your
+  goal. It can still tell that something is covering it, and where on the
+  screen you tapped.
+- Links that Kindgate opens for you (claude.ai, the NSDR recording, your own
+  "instead" links) are opened without a referrer, so the site you land on is
+  not told which site you came from.
+
+### Outside the extension's storage
+
+A few small values are kept in the websites' own storage in Safari, because a
+script that has to decide something before the page draws cannot wait for the
+extension's storage. The site they are stored on can read them, so they also
+show that site that Kindgate is installed. None holds a log entry, a feeling,
+a plan or an address.
+
+| Where | Key | What it holds | Goes away |
+| --- | --- | --- | --- |
+| YouTube and Instagram, `localStorage` | `fg:features` | A copy of the on/off switches for the YouTube and Instagram measures | When you clear that site's data |
+| YouTube, `localStorage` | `yt-player-quality` | Your default quality, in YouTube's own setting | When you clear that site's data |
+| YouTube, `sessionStorage` | `kg-hops` | Times of the last redirects, to stop a redirect loop | When the tab closes |
+| Instagram, `sessionStorage` | `kg-ig-hops`, `fg:igStart` | The same loop guard, and when this visit started | When the tab closes |
+| Any site, `sessionStorage` | `fg:nightPass` | That you tapped "continue anyway" at night in this tab | When the tab closes |
+
+**These stay after you remove Kindgate.** Removing the extension deletes its
+own storage, not what sits in a website's storage. To clear the two
+`localStorage` entries: Settings › Apps › Safari › Advanced › Website Data,
+search for youtube.com and instagram.com and delete them (on a Mac: Safari ›
+Settings › Privacy › Manage Website Data). That also signs you out of those
+sites. The `sessionStorage` entries are gone as soon as the tab is closed.
+
+The Kindgate app keeps the setup checklist's status in an App Group it shares
+with the extension (see [The container app](#the-container-app)). Deleting the
+app removes it.
+
+### What runs on every website
+
+Four scripts are allowed on all sites, because night mode, the pause and the
+warm screen have to work wherever you are. Nothing but the code limits them,
+so this is what each one does there:
+
+- `checkin.js` checks the time against your windows and, at night, draws the
+  night page. It reads the page's host name to apply your allow-list and
+  pauses videos under the page; it stores `youtube`, `instagram` or `other`,
+  never the host.
+- `pause.js` compares the page's host name with your pause list and the
+  bundled lists, and draws the pause screen on a match. The host name is not
+  stored.
+- `warm.js` draws the amber overlay, and tells the Kindgate app that the
+  extension ran, with the host reduced to `youtube.com`, `instagram.com` or
+  `other`.
+- `media-keys.js` runs in every frame and listens for key presses, because
+  bare letter keys cannot be registered any other way. It looks each press up
+  in a map of six keys, ignores everything typed into a field or held with a
+  modifier, and stores and sends no keys. The only thing it saves is the
+  playback speed you chose.
+
+The bundled fonts, the pause lists and two stylesheets are readable by web
+pages (`web_accessible_resources`), because Kindgate's own screens load them
+from inside a page. A page that knew the extension's address could load one
+and learn that Kindgate is installed. The storage keys above are an easier
+tell.
 
 ## Features in detail
 
@@ -464,10 +532,13 @@ when a content script reports it ran on a site, which is proof that site is
 allowed. `SafariWebExtensionHandler.swift` writes timestamps into a shared App
 Group and the checklist reads them.
 
-What crosses that boundary is deliberately tiny: a host name already reduced to
+What crosses that boundary is deliberately tiny. When the extension starts:
+three yes/no answers, whether Safari has granted it youtube.com, instagram.com
+and all other websites. When a page opens: a host name already reduced to
 `youtube.com`, `instagram.com` or `other`, and whether the page was opened from
-the Home Screen. No URLs, no page content, and it never leaves the device. The
-messages are throttled to one a minute per site.
+the Home Screen. No URLs, no list of sites, no page content, and it never
+leaves the device. The messages are throttled to one a minute per site. A
+message the app does not understand is dropped, and its content is not logged.
 
 A row that was green and has gone quiet for a week turns amber rather than
 silently staying green, so an extension switched off in Settings shows up.
@@ -491,7 +562,9 @@ on Subscriptions, hide Shorts, hide recommendations, hide comments, no autoplay,
 the Subscriptions/You bar, the PiP button and rotate to fullscreen. For
 Instagram: open on Following, block Reels and Explore, hide suggested, hide
 sponsored. The site scripts read the map from a localStorage mirror, so
-document-start redirects are right from the second visit on.
+document-start redirects are right from the second visit on. The mirror is in
+the sites' own storage, where the site can read it; see
+[Outside the extension's storage](#outside-the-extensions-storage).
 
 ## Project layout
 

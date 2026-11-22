@@ -122,7 +122,7 @@
   for (const evt of ['click', 'pointerdown', 'touchstart', 'mousedown']) {
     window.addEventListener(evt, (e) => {
       // Never interfere with Kindgate's own check-in card
-      if (e.target.closest && e.target.closest('.kg-checkin, .kg-toast')) return;
+      if (e.target.closest && e.target.closest('[data-kg], .kg-checkin, .kg-toast')) return;
       if (F.igReels && isBlockedLink(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); }
     }, { capture: true, passive: false });
   }

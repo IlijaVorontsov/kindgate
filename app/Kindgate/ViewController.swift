@@ -52,7 +52,7 @@ private struct SetupStatus {
     let alive: Date?
     let hosts: [String: Date]        // youtube.com / instagram.com / other -> last seen
     let standalone: [String: Date]   // host -> last opened from the Home Screen
-    let origins: [String]            // browser.permissions.getAll().origins, best effort
+    let granted: [String: Bool]      // youtube / instagram / other -> granted in Safari, best effort
     let youtubeApp: Bool
     let instagramApp: Bool
 
@@ -73,13 +73,13 @@ private struct SetupStatus {
             alive: date(d["alive"]),
             hosts: dates(d["hosts"]),
             standalone: dates(d["standalone"]),
-            origins: d["origins"] as? [String] ?? [],
+            granted: d["granted"] as? [String: Bool] ?? [:],
             youtubeApp: installed("youtube"),
             instagramApp: installed("instagram"))
     }
 
-    func originGranted(_ needle: String) -> Bool {
-        origins.contains { $0.contains(needle) }
+    func isGranted(_ key: String) -> Bool {
+        granted[key] == true
     }
 }
 
@@ -130,27 +130,27 @@ private func buildSections(_ s: SetupStatus) -> [Section] {
     }
 
     // 2–3. Sites allowed
-    func site(_ host: String, open: String) -> Row {
+    func site(_ host: String, key: String, open: String) -> Row {
         let url = URL(string: open)
         if let seen = s.hosts[host] {
             return Row(title: "\(host) allowed", detail: "Seen \(ago(seen)).", state: .done, action: nil)
         }
-        if s.originGranted(host) {
+        if s.isGranted(key) {
             return Row(title: "\(host) allowed", detail: "Allowed in Safari. Not opened yet.", state: .done, action: url)
         }
         return Row(title: "\(host) allowed",
                    detail: "Not seen yet. Tap to open \(host) in Safari, then choose Allow (Always Allow) when Safari asks.",
                    state: .todo, action: url)
     }
-    let yt = site("youtube.com", open: "https://m.youtube.com/")
-    let ig = site("instagram.com", open: "https://www.instagram.com/")
+    let yt = site("youtube.com", key: "youtube", open: "https://m.youtube.com/")
+    let ig = site("instagram.com", key: "instagram", open: "https://www.instagram.com/")
 
     // 4. Other Websites
     let otherRow: Row
     let anyPage = URL(string: "https://www.wikipedia.org/")
     if let seen = s.hosts["other"] {
         otherRow = Row(title: "Other Websites allowed", detail: "Seen \(ago(seen)).", state: .done, action: nil)
-    } else if s.originGranted("<all_urls>") || s.originGranted("*://*/*") {
+    } else if s.isGranted("other") {
         otherRow = Row(title: "Other Websites allowed", detail: "Allowed in Safari.", state: .done, action: nil)
     } else {
         otherRow = Row(title: "Other Websites allowed",
