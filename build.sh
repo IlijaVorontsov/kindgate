@@ -262,6 +262,18 @@ step "App Info.plist: URL schemes the checklist may query"
 plutil -replace LSApplicationQueriesSchemes -json '["youtube","instagram"]' "$PROJDIR/Kindgate/Info.plist" || exit 1
 plutil -extract LSApplicationQueriesSchemes json -o - "$PROJDIR/Kindgate/Info.plist"
 
+step "App Info.plist: export compliance"
+# Declares that Kindgate uses no encryption that needs export documentation,
+# so App Store Connect stops asking on every upload and TestFlight builds are
+# not held back waiting for the answer. True as long as this holds: no
+# cryptography of its own and none linked in; the app and the extension make
+# no network connections; the one use of cryptography is the pause PIN, hashed
+# with PBKDF2 by Safari's own WebCrypto (popup.js), which is the system's.
+# Review this line before adding any encryption or a networking library.
+# https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations
+plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PROJDIR/Kindgate/Info.plist" || exit 1
+plutil -extract ITSAppUsesNonExemptEncryption raw -o - "$PROJDIR/Kindgate/Info.plist"
+
 fi
 
 step "Normalise bundle identifiers"
@@ -434,6 +446,8 @@ ARCHIVED_APP="$ARCHIVE/Products/Applications/Kindgate.app"
 [ -f "$ARCHIVED_APP/PrivacyInfo.xcprivacy" ] || { echo "No privacy manifest in the app bundle — see the Privacy manifests step."; exit 9; }
 [ -n "$(find "$ARCHIVED_APP/PlugIns" -path '*.appex/PrivacyInfo.xcprivacy' 2>/dev/null)" ] || { echo "No privacy manifest in the extension bundle — see the Privacy manifests step."; exit 9; }
 echo "Privacy manifest: app and extension"
+[ "$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - "$ARCHIVED_APP/Info.plist" 2>/dev/null)" = false ] || { echo "ITSAppUsesNonExemptEncryption is not false in the built Info.plist — see the export compliance step."; exit 9; }
+echo "Export compliance: declared, no non-exempt encryption"
 
 step "Export"
 EXPORT_DIR="$OUT/build/export-$VERSION-$BUILD"
@@ -464,9 +478,9 @@ echo
 echo "== DONE =="
 echo "Version $VERSION, build $BUILD"
 if [ "$MODE" = upload ]; then
-  echo "Uploaded to App Store Connect. Processing takes a few minutes; the build"
-  echo "then needs export compliance answered, and an external tester group has"
-  echo "to clear Beta App Review before strangers can install it."
+  echo "Uploaded to App Store Connect. Processing takes a few minutes; an"
+  echo "external tester group then has to clear Beta App Review before strangers"
+  echo "can install it."
 else
   echo "Archive:  $ARCHIVE"
   echo "Exported: $EXPORT_DIR"

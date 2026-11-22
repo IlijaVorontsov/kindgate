@@ -84,6 +84,12 @@ builds: `bash build.sh --release` archives and exports a signed `.ipa`, and
 key, team id and tester checklist are in the private ops repo's
 [TestFlight runbook](https://github.com/IlijaVorontsov/kindgatex/blob/main/docs/testflight.md).
 
+Each iPhone build carries a privacy manifest for the app and one for the
+extension, and declares `ITSAppUsesNonExemptEncryption` as false: Kindgate has
+no cryptography of its own and makes no network connections; the pause PIN is
+hashed by Safari's built-in WebCrypto. `--release` checks both in the archive
+before exporting.
+
 **On a Mac**, `bash build.sh --mac` builds a macOS-only project in a
 `Kindgate-Xcode-mac` folder beside this one, signs it with your Apple
 Development certificate, copies `Kindgate.app` to `~/Applications` and opens it
