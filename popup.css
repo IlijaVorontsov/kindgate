@@ -6,6 +6,13 @@ body {
   font: 15px/1.4 var(--kg-font-body);
   color: var(--kg-ink); background: var(--kg-cream);
 }
+/* Mac (and iPad with a trackpad): Safari sizes the popover once, when it
+   opens, and the page itself never scrolls inside it. So the popover gets a
+   fixed height and the body scrolls instead. The iPhone sheet is unaffected. */
+@media (hover: hover) and (pointer: fine) {
+  html { height: 600px; overflow: hidden; }
+  body { height: 600px; overflow-y: auto; overscroll-behavior: contain; }
+}
 header { margin-bottom: 8px; }
 h1 { font-size: 22px; margin: 0; font-family: var(--kg-font-display); font-weight: 600; letter-spacing: -0.01em; }
 .wordmark { display: flex; align-items: center; gap: 9px; }

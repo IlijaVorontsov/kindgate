@@ -204,7 +204,7 @@
       const now = new Date(), t = now.getHours() * 60 + now.getMinutes();
       const inW = (x) => { if (!x || x.on === false) return false; const a = toMin(x.start), b = toMin(x.end); return a <= b ? (t >= a && t < b) : (t >= a || t < b); };
       const active = inW(w.night) ? 'Night window is active now' : inW(w.work) ? 'After-work window is active now' : 'No window active right now';
-      const last = d && d.fgWindowShownAt ? `Last shown: ${new Date(d.fgWindowShownAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })} (${d.fgWindowShownKey === 'night' ? 'night' : 'after work'})` : 'Not shown yet on this phone';
+      const last = d && d.fgWindowShownAt ? `Last shown: ${new Date(d.fgWindowShownAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })} (${d.fgWindowShownKey === 'night' ? 'night' : 'after work'})` : 'Not shown yet on this device';
       $('winStatus').textContent = `${active}. ${last}. If a window is active but pages aren\u2019t appearing, check Settings \u2192 Apps \u2192 Safari \u2192 Extensions \u2192 Kindgate: on, and Other Websites \u2192 Allow.`;
       api.get(['fgNsdrDiag']).then((x) => {
         const g = x && x.fgNsdrDiag; if (!g) return;
