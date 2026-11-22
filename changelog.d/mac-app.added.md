@@ -1,0 +1,3 @@
+- The Mac app is now Kindgate's own: a window that shows whether the extension is turned on in Safari and which sites it is allowed on, with a button that opens Safari's extension settings.
+- Privacy policy, support, source code, open source licences and the version are in the Mac app.
+- A proper Mac app icon.

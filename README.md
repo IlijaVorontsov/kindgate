@@ -96,14 +96,24 @@ no device, certificate or Apple ID, and checks the same things in the built
 app. It is the quick way to see that everything compiles.
 
 **On a Mac**, `bash build.sh --mac` builds a macOS-only project in a
-`Kindgate-Xcode-mac` folder beside this one, signs it with your Apple
-Development certificate, copies `Kindgate.app` to `~/Applications` and opens it
-once so Safari picks up the extension. Then tick Kindgate in Safari → Settings →
-Extensions and allow it on every website. With no certificate on the Mac the
-build is signed to run locally instead. Safari treats that as an unsigned
-extension: it stays hidden until you tick *Allow unsigned extensions* under
-Safari → Settings → Developer, and Safari clears that box every time it quits.
-Add `--no-install` to build without copying or opening the app. Without Xcode, `bash build.sh --stage`
+`Kindgate-Xcode-mac` folder beside this one, signs it to run locally, copies
+`Kindgate.app` to `~/Applications` and opens it once so Safari picks up the
+extension. Then tick Kindgate in Safari → Settings → Extensions and allow it on
+every website. Safari treats a locally signed build as an unsigned extension:
+it stays hidden until you tick *Allow unsigned extensions* under Safari →
+Settings → Developer, and Safari clears that box every time it quits. With
+`DEVELOPMENT_TEAM=<team id>` the build is signed with your Apple Development
+certificate instead and needs no such box. Xcode then fetches a provisioning
+profile from your developer account, because the app's App Group needs one,
+and that only works once this Mac is registered with the team (Xcode offers to
+do it under Signing & Capabilities). `--adhoc` forces local signing.
+Add `--no-install` to build without copying or opening the app. The app that
+opens is [Kindgate's own Mac app](#on-the-mac): a window with the setup steps
+and their state. `bash build.sh --mac --release` archives it for the Mac App
+Store and exports a signed `.pkg`; it needs the paid developer team and stops
+at once, before building, on a Mac that has nothing to sign with.
+
+Without Xcode, `bash build.sh --stage`
 only stages the extension folder: load it from Safari → Settings → Developer →
 *Add Temporary Extension…* (turn on *Allow unsigned extensions* first). Safari
 drops a temporary extension when it quits or after 24 hours, so this is for
@@ -550,6 +560,37 @@ Under the checklist an **About** section links the
 [privacy policy](https://kindgate.app/privacy) and the
 [support page](https://kindgate.app/support) and shows the open source notices.
 
+#### On the Mac
+
+The Mac app (`app-mac/`) is one window with the same idea and fewer rows.
+
+| Row | Where the state comes from |
+| --- | --- |
+| Extension turned on | Safari itself (`SFSafariExtensionManager`), which a Mac app may ask |
+| youtube.com allowed | The extension: Safari granted it the site, or a content script ran there |
+| instagram.com allowed | The same |
+| Other websites allowed | The same, bucketed as "other" |
+
+A button opens Safari's extension settings with Kindgate selected. A row that
+is still open has an "Open in Safari" button for the site. Below that: the
+privacy policy, the support page, the source code, the open source licences
+(the full OFL and MIT texts, read from the extension inside the app) and the
+version. There are no "delete the app" rows: on a Mac the sites are used in
+the browser anyway.
+
+The native side is the same as on the iPhone: one handler
+(`app/Kindgate Extension/SafariWebExtensionHandler.swift`) is built into both
+apps, takes the same two messages and writes them to the App Group
+`group.app.kindgate`. The Mac app is sandboxed, and its entitlements are the
+sandbox and that App Group, nothing else: no network access, no file access.
+It makes no network request; links open in the browser. Its typefaces are
+loaded from the extension bundled inside it, not copied.
+
+A build that is signed to run locally carries no App Group: Xcode signs one
+only with a provisioning profile, which needs a developer team. In such a
+build the first row works and the three "allowed" rows say that they cannot be
+shown. Inside Safari nothing is different.
+
 ### The popup
 
 Grouped into collapsible categories, Check-in & cues, Evening plan, Pause,
@@ -590,12 +631,20 @@ upsell.js          Blocks the App Store banner and "open in app" nags
 popup.html/js/css  Settings and the cue summary behind the extension icon
 background.js      Status heartbeat: tells the container app the extension is on
 
-app/               The container app: setup checklist, Swift, entitlements and
-                   the two privacy manifests (PrivacyInfo.xcprivacy), overlaid
-                   on the project the converter generates
+app/               The iPhone app: setup checklist, Swift, entitlements and the
+                   two privacy manifests (PrivacyInfo.xcprivacy), overlaid on
+                   the project the converter generates. Its native message
+                   handler and the extension's privacy manifest are also the
+                   Mac's: there is one copy of each
+app-mac/           The Mac app: its window (AppKit and SwiftUI), menu bar,
+                   sandbox entitlements and privacy manifest, overlaid the
+                   same way by build.sh --mac
 build.sh           Convert, sign and install onto a paired iPhone or this Mac (--mac),
-                   stage for Add Temporary Extension (--stage), or archive for TestFlight
-scripts/           changelog.py (release notes) and app-icon.sh (the app icon build.sh installs)
+                   stage for Add Temporary Extension (--stage), or archive for
+                   TestFlight (--release) or the Mac App Store (--mac --release)
+scripts/           changelog.py (release notes), app-icon.sh and mac-icon.sh (the
+                   app icons build.sh installs), hashes.py and verify-install.sh
+                   (compare an installed Mac app with the source)
 ```
 
 ## Brand
@@ -725,17 +774,19 @@ came from, as with any link.
 `background.js` sends native messages to the app that carries the extension.
 They stay on the device.
 
-- When the extension starts: a timestamp and **the list of sites you have
-  granted the extension** (`permissions.getAll().origins`).
+- When the extension starts: a timestamp and three yes/no answers, whether
+  Safari has granted the extension youtube.com, instagram.com and all other
+  websites. The list of granted sites itself is not sent.
 - When a page loads, at most once a minute per name: `youtube.com`,
   `instagram.com` or `other`, a timestamp, and whether the page was opened
   from the Home Screen. `warm.js` passes the full host name to the background
   script, which reduces it to those three before anything is sent on.
 
-On iPhone and iPad the handler (`app/Kindgate Extension/SafariWebExtensionHandler.swift`)
-keeps these in the App Group the app reads for its checklist. A message it
-does not recognise is written to the system log. The Swift code has no network
-call.
+The handler (`app/Kindgate Extension/SafariWebExtensionHandler.swift`, the
+same file in the iPhone and the Mac app) keeps these in the App Group the app
+reads for its checklist. A message it does not recognise is dropped; the
+system log gets one fixed line saying so, without the message. The Swift code
+has no network call.
 
 ### Ask an AI assistant
 
@@ -756,15 +807,17 @@ bash scripts/verify-install.sh /Applications/Kindgate.app <tag>     # compare th
 ```
 
 `hashes.py` lists exactly the files `build.sh` stages, by reading the `STRIP`
-list from it. `verify-install.sh` prints every file in the app that differs
-from the source at that tag, is missing or is extra.
+list from it, plus the extension's privacy manifest, which the build adds from
+`app/Kindgate Extension/`. `verify-install.sh` prints every file in the app
+that differs from the source at that tag, is missing or is extra.
+`build.sh --mac` runs the same comparison on the app it has just built.
 
 ### What a check cannot show
 
 - **There is no App Store build and no release tag yet.** The check script has
-  only been tried on staged copies of the extension, not on an app from the
-  store. Xcode or the store may add or rewrite files; which ones is not known
-  yet.
+  been run on a Mac app built locally from this repository, where every file
+  matched, not on an app from the store. The store may add or rewrite files;
+  which ones is not known yet.
 - **Source at a tag, not the store binary.** Reading the code, by eye or with
   an assistant, checks this repository. Only the hash comparison ties an
   installed app to it, and only for the extension's scripts, styles, lists,
@@ -772,9 +825,10 @@ from the source at that tag, is missing or is extra.
 - **The Swift code cannot be compared.** Apple signs and repackages the
   compiled app, so nobody can show that it equals the source. That covers the
   app and the native message handler.
-- **The Mac app is not in this repository.** `build.sh --mac` keeps the app
-  and the message handler that Apple's converter generates; `app/` is used for
-  iPhone and iPad only.
+- **What the Mac app still takes from Apple's converter.** The app's code,
+  window, entitlements and icon are in this repository (`app-mac/`, `app/`,
+  `scripts/mac-icon.sh`). The Xcode project itself is generated by Apple's
+  converter on every build and then edited by `build.sh`; it is not checked in.
 - **iPhone and iPad only in part.** The files are not reachable on the device.
   The same source feeds both builds, so a Mac check is indirect evidence for
   the iPhone build of the same version, not proof.

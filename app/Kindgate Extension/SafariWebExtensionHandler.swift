@@ -18,7 +18,9 @@
 //  older build stored that list as "origins"; it is removed on the next message.
 //
 //  This file lives in the repo under app/ and is copied over the converter's
-//  file by build.sh.
+//  file by build.sh, for the iPhone app and for the Mac app alike: there is
+//  one handler. On the Mac only "alive" and the hosts are read; whether the
+//  extension is enabled is asked of Safari there.
 //
 
 import SafariServices
