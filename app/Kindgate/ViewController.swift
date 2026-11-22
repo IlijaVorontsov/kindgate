@@ -11,6 +11,10 @@
 //    - "on the Home Screen" comes from navigator.standalone, reported by the
 //      content script when the page was opened from the Home Screen.
 //
+//  Below the checklist, an About section links the privacy policy and the
+//  support page and shows the open source notices (App Review guideline
+//  5.1.1(i) wants the policy reachable inside the app).
+//
 //  This file lives in the repo under app/ and is copied over the converter's
 //  file by build.sh. It is deliberately a single file with no storyboard
 //  outlets so the generated project needs no new file references.
@@ -21,6 +25,11 @@ import UIKit
 private let appGroup = "group.app.kindgate"
 private let statusKey = "kgStatus"
 private let staleAfter: TimeInterval = 7 * 24 * 3600
+
+private let privacyURL = URL(string: "https://kindgate.app/privacy")
+private let supportURL = URL(string: "https://kindgate.app/support")
+/// Not an address to open: tapping this row shows the licences screen.
+private let licencesAction = URL(string: "kindgate-internal:licences")
 
 // MARK: - Brand
 
@@ -76,7 +85,11 @@ private struct SetupStatus {
 
 // MARK: - Rows
 
-private enum RowState { case done, todo, stale }
+private enum RowState: Equatable {
+    case done, todo, stale
+    /// Not a step: a row that leads somewhere, drawn with this SF Symbol.
+    case link(String)
+}
 
 private struct Row: Equatable {
     let title: String
@@ -172,6 +185,14 @@ private func buildSections(_ s: SetupStatus) -> [Section] {
                        app("Instagram", installed: s.instagramApp),
                        home("youtube.com", open: "https://m.youtube.com/"),
                        home("instagram.com", open: "https://www.instagram.com/")]),
+        Section(header: "About",
+                footer: "No account, no server, no analytics. Everything Kindgate stores stays on this device.",
+                rows: [Row(title: "Privacy policy", detail: "kindgate.app/privacy",
+                           state: .link("hand.raised"), action: privacyURL),
+                       Row(title: "Support", detail: "kindgate.app/support",
+                           state: .link("questionmark.circle"), action: supportURL),
+                       Row(title: "Open source licences", detail: "Kindgate, the typefaces and the pause lists.",
+                           state: .link("doc.text"), action: licencesAction)]),
     ]
 }
 
@@ -309,6 +330,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         case .todo:
             content.image = UIImage(systemName: "circle")
             content.imageProperties.tintColor = .tertiaryLabel
+        case .link(let symbol):
+            content.image = UIImage(systemName: symbol)
+            content.imageProperties.tintColor = .secondaryLabel
         }
         content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .title2)
         cell.contentConfiguration = content
@@ -320,6 +344,71 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         guard let url = sections[indexPath.section].rows[indexPath.row].action else { return }
+        if url == licencesAction {
+            present(UINavigationController(rootViewController: LicencesViewController()), animated: true)
+            return
+        }
         UIApplication.shared.open(url)
     }
+}
+
+// MARK: - Licences
+
+/// Notices for what ships in the bundle. The full OFL and MIT texts travel
+/// with the extension (fonts/OFL.txt, lists/LICENSE) and its popup shows them
+/// under About; here the MIT text is short enough to give in full.
+private let licenceNotices = """
+KINDGATE
+Open source under the Mozilla Public License 2.0.
+Licence: https://www.mozilla.org/MPL/2.0/
+Source code: https://github.com/IlijaVorontsov/kindgate
+
+TYPEFACES
+Fraunces. Copyright 2018 The Fraunces Project Authors (https://github.com/undercasetype/Fraunces)
+Instrument Sans. Copyright 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
+Both under the SIL Open Font License, Version 1.1: https://openfontlicense.org
+
+READY-MADE PAUSE LISTS
+Derived from StevenBlack/hosts (https://github.com/StevenBlack/hosts), under the MIT License:
+
+Copyright © 2023 Steven Black
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The full text of every licence ships with the extension. In Safari, open Kindgate from the page menu and look under About, Open source licences.
+"""
+
+private final class LicencesViewController: UIViewController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Open source licences"
+        view.backgroundColor = .systemGroupedBackground
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self,
+                                                            action: #selector(closeTapped))
+
+        let text = UITextView()
+        text.isEditable = false
+        text.dataDetectorTypes = .link          // the addresses above become tappable
+        text.backgroundColor = .clear
+        text.font = .preferredFont(forTextStyle: .footnote)
+        text.adjustsFontForContentSizeCategory = true
+        text.textColor = .label
+        text.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 24, right: 16)
+        text.text = licenceNotices
+        text.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(text)
+        NSLayoutConstraint.activate([
+            text.topAnchor.constraint(equalTo: view.topAnchor),
+            text.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            text.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            text.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+        ])
+    }
+
+    @objc private func closeTapped() { dismiss(animated: true) }
 }

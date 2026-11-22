@@ -35,7 +35,9 @@ APP_GROUP="group.$BUNDLE"
 # docs/ is ignored by git but listed anyway: an untracked local copy would
 # otherwise be rsynced straight into the signed .appex.
 STRIP="app docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md"
-STAGE_EXCLUDES=(--exclude '.*'); for s in $STRIP; do STAGE_EXCLUDES+=(--exclude "$s"); done
+# Anchored to the repo root ("/name"): a bare name matches at any depth, which
+# used to drop lists/LICENSE, the MIT notice that has to ship with the lists.
+STAGE_EXCLUDES=(--exclude '.*'); for s in $STRIP; do STAGE_EXCLUDES+=(--exclude "/$s"); done
 
 MODE=device
 for arg in "$@"; do
@@ -448,6 +450,12 @@ ARCHIVED_APP="$ARCHIVE/Products/Applications/Kindgate.app"
 echo "Privacy manifest: app and extension"
 [ "$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - "$ARCHIVED_APP/Info.plist" 2>/dev/null)" = false ] || { echo "ITSAppUsesNonExemptEncryption is not false in the built Info.plist — see the export compliance step."; exit 9; }
 echo "Export compliance: declared, no non-exempt encryption"
+# The fonts (OFL) and the lists (MIT) may only be shipped with their licence
+# texts, and the popup's "Open source licences" reads these two files.
+for f in fonts/OFL.txt lists/LICENSE; do
+  [ -n "$(find "$ARCHIVED_APP/PlugIns" -path "*.appex/*$f" 2>/dev/null)" ] || { echo "$f is not in the extension bundle."; exit 9; }
+done
+echo "Licence texts: fonts/OFL.txt, lists/LICENSE"
 
 step "Export"
 EXPORT_DIR="$OUT/build/export-$VERSION-$BUILD"

@@ -449,11 +449,19 @@ messages are throttled to one a minute per site.
 A row that was green and has gone quiet for a week turns amber rather than
 silently staying green, so an extension switched off in Settings shows up.
 
+Under the checklist an **About** section links the
+[privacy policy](https://kindgate.app/privacy) and the
+[support page](https://kindgate.app/support) and shows the open source notices.
+
 ### The popup
 
 Grouped into collapsible categories, Check-in & cues, Evening plan, Pause,
-YouTube & feeds, and Safari & privacy, with sub-sections inside the larger ones.
-Which sections are open is remembered.
+YouTube & feeds, Safari & privacy, and About, with sub-sections inside the
+larger ones. Which sections are open is remembered.
+
+About links the privacy policy and the support page, which open in a tab, and
+lists the open source licences. The font and list licence texts are read from
+the bundle, so they show offline.
 
 Every YouTube and Instagram measure is an individual toggle. For YouTube: open
 on Subscriptions, hide Shorts, hide recommendations, hide comments, no autoplay,
@@ -584,6 +592,9 @@ affects Safari. See the note under [What it does](#what-it-does).
 [Mozilla Public License 2.0](LICENSE).
 
 The bundled typefaces in `fonts/` are not covered by it. They are licensed
-separately under the SIL Open Font License 1.1; see `fonts/OFL.txt`.
+separately under the SIL Open Font License 1.1; see `fonts/OFL.txt`. The pause
+lists in `lists/` come from StevenBlack/hosts under the MIT License; see
+`lists/LICENSE`. Both files ship inside the extension, and the app and the popup
+show the notices under About, Open source licences.
 
 Kindgate is not affiliated with YouTube, Instagram, Apple or Mozilla.
