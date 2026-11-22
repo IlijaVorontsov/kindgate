@@ -845,7 +845,8 @@
     if (SITE === 'youtube' && location.href.includes('hEypv90GzDE')) {
       if (Number(pre.fgNsdrPassUntil || 0) > Date.now()) return;
       // Diagnostic: the NSDR opened without a live pass. The popup shows this.
-      save({ fgNsdrDiag: { t: Date.now(), passUntil: Number(pre.fgNsdrPassUntil || 0), url: location.pathname } });
+      // Only the time and the pass: no path, so nothing of the page is stored.
+      save({ fgNsdrDiag: { t: Date.now(), passUntil: Number(pre.fgNsdrPassUntil || 0) } });
     }
     const win = activeWindow(pre.fgWindows);
     const night = !!win && win.key === 'night';

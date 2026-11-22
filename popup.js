@@ -215,7 +215,9 @@
         const g = x && x.fgNsdrDiag; if (!g) return;
         const when = new Date(g.t).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
         const why = !g.passUntil ? 'no pass had been saved' : (g.passUntil < g.t ? `the pass had expired ${Math.round((g.t - g.passUntil) / 60000)} min earlier` : 'unexpected');
-        $('winStatus').textContent += ` NSDR diagnostic: at ${when} the night page fired on the NSDR video (${g.url}) because ${why}.`;
+        $('winStatus').textContent += ` NSDR diagnostic: at ${when} the night page fired on the NSDR video because ${why}.`;
+        // Earlier versions stored the page's path with it; drop that.
+        if ('url' in g) api.set({ fgNsdrDiag: { t: g.t, passUntil: g.passUntil } });
       });
     });
   }
