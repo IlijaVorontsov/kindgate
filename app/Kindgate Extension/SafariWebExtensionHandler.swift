@@ -6,11 +6,16 @@
 //  a small status dictionary in the App Group so the container app's setup
 //  checklist can show live state. Two message types:
 //
-//    { type: "alive", at: <ms>, origins: [...] }            the extension is on
+//    { type: "alive", at: <ms>, granted: { youtube, instagram, other: Bool } }
+//                                                           the extension is on
 //    { type: "seen", host, standalone: Bool, at: <ms> }     a site was allowed
 //
 //  Stored under "kgStatus":
-//    { alive: ms, origins: [...], hosts: { host: ms }, standalone: { host: ms } }
+//    { alive: ms, granted: { youtube, instagram, other: Bool },
+//      hosts: { host: ms }, standalone: { host: ms } }
+//
+//  "granted" is three booleans, not the list of sites Safari granted. An
+//  older build stored that list as "origins"; it is removed on the next message.
 //
 //  This file lives in the repo under app/ and is copied over the converter's
 //  file by build.sh.
@@ -66,8 +71,12 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         switch type {
         case "alive":
             status["alive"] = at
-            if let origins = msg["origins"] as? [String] {
-                status["origins"] = origins
+            if let granted = msg["granted"] as? [String: Any] {
+                var flags: [String: Bool] = [:]
+                for key in ["youtube", "instagram", "other"] {
+                    flags[key] = (granted[key] as? Bool) == true
+                }
+                status["granted"] = flags
             }
         case "seen":
             guard let host = msg["host"] as? String, !host.isEmpty else { return false }
@@ -84,6 +93,7 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         default:
             return false
         }
+        status.removeValue(forKey: "origins")   // the list an older build stored
 
         defaults.set(status, forKey: statusKey)
         return true

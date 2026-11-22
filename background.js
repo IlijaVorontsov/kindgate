@@ -5,9 +5,14 @@
 // script sends a native message when it starts (proof the extension is on)
 // and whenever a content script reports that it ran on a site (proof that
 // site is allowed). The native handler writes timestamps into the App Group,
-// and the app's setup checklist reads them. Nothing else is sent: a host name
-// reduced to youtube.com / instagram.com / other, and whether the page was
-// opened from the Home Screen.
+// and the app's setup checklist reads them. What is sent, in full:
+//
+//   on start:  three yes/no answers, whether Safari has granted the extension
+//              youtube.com, instagram.com and all other websites;
+//   on a site: a host name reduced to youtube.com / instagram.com / other,
+//              and whether the page was opened from the Home Screen.
+//
+// Nothing else, and it goes to the app on this device only.
 
 (() => {
   'use strict';
@@ -33,10 +38,15 @@
     } catch (e) { /* no native host (e.g. desktop browser) */ }
   };
 
+  // The checklist has three rows to fill, so three booleans are all it gets.
+  // The list of granted match patterns itself stays here: on a per-site grant
+  // it would name every site the user allowed.
   const alive = async () => {
     let origins = [];
     try { if (perms && perms.getAll) origins = (await perms.getAll()).origins || []; } catch (e) {}
-    send({ type: 'alive', at: Date.now(), origins });
+    const has = (needle) => origins.some((o) => String(o).includes(needle));
+    const granted = { youtube: has('youtube.com'), instagram: has('instagram.com'), other: has('<all_urls>') || has('*://*/*') };
+    send({ type: 'alive', at: Date.now(), granted });
   };
 
   rt.onMessage.addListener((msg) => {

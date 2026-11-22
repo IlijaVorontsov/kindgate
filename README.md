@@ -449,10 +449,13 @@ when a content script reports it ran on a site, which is proof that site is
 allowed. `SafariWebExtensionHandler.swift` writes timestamps into a shared App
 Group and the checklist reads them.
 
-What crosses that boundary is deliberately tiny: a host name already reduced to
+What crosses that boundary is deliberately tiny. When the extension starts:
+three yes/no answers, whether Safari has granted it youtube.com, instagram.com
+and all other websites. When a page opens: a host name already reduced to
 `youtube.com`, `instagram.com` or `other`, and whether the page was opened from
-the Home Screen. No URLs, no page content, and it never leaves the device. The
-messages are throttled to one a minute per site.
+the Home Screen. No URLs, no list of sites, no page content, and it never
+leaves the device. The messages are throttled to one a minute per site. A
+message the app does not understand is dropped, and its content is not logged.
 
 A row that was green and has gone quiet for a week turns amber rather than
 silently staying green, so an extension switched off in Settings shows up.
