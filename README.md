@@ -203,6 +203,9 @@ things kept elsewhere on the device are listed under
 - Each of the three logs can be copied out as JSON or cleared from the popup:
   the cue log under Check-in & cues, the wins log under Evening plan, the pause
   log under Pause › Patterns (behind the PIN, if one is set).
+- The self-check under Pause › Check in with yourself keeps its last result (a
+  score and the date, not the answers). The section shows when one is saved,
+  and "Clear result" next to it deletes it.
 - The pause section can be locked with a PIN, hashed with PBKDF2 and salted per
   install. It keeps the section out of casual view on a shared phone. It is a
   curtain, not a lock: the log behind it is ordinary extension storage.

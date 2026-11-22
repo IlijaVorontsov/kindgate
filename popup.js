@@ -313,7 +313,25 @@
       : score <= 14
       ? `Score ${score} of 24. Some signs of strain. The tools here are a reasonable place to start. If it hasn\u2019t shifted in a couple of months, talking to someone is worth it \u2014 not because something is wrong with you, but because it\u2019s quicker with help.`
       : `Score ${score} of 24. This pattern of answers is the kind clinicians take seriously. Please consider talking to a GP or a therapist \u2014 CBT- and ACT-based approaches help with exactly this. This isn\u2019t a diagnosis and it isn\u2019t a verdict on you. How much you judge yourself for it predicts suffering better than how often it happens.`;
-    api.set({ fgPauseAssess: { t: Date.now(), score } });
+    const saved = { t: Date.now(), score };
+    api.set({ fgPauseAssess: saved });
+    assessStored(saved);
+  });
+  // The score is kept so it can be compared later, and it is the most personal
+  // value Kindgate stores, so it is shown as stored and has its own way out.
+  function assessStored(saved) {
+    const has = !!(saved && typeof saved.score === 'number');
+    $('assessStored').hidden = !has;
+    $('assessSaved').textContent = has
+      ? `Saved on this device: ${saved.score} of 24, ${new Date(saved.t).toLocaleDateString()}.` : '';
+  }
+  api.get(['fgPauseAssess']).then((d) => assessStored(d && d.fgPauseAssess));
+  $('assessClear').addEventListener('click', async () => {
+    if (!confirm('Delete the saved self-check result?')) return;
+    await api.remove(['fgPauseAssess']);
+    assessStored(null);
+    $('assessResult').hidden = true; $('assessResult').textContent = '';
+    buildAssess();
   });
 
   const altIds = ['bored', 'stressed', 'lonely', 'tired', 'aroused', 'habit'];

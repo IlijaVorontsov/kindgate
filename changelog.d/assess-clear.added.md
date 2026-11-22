@@ -1,0 +1,1 @@
+- The pause self-check now shows when a result is saved on the device, and a "Clear result" button deletes it. Before, the score could only be removed by removing the extension.
