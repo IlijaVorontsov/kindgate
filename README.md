@@ -366,9 +366,14 @@ use moves to the new action.
 The speed is global, like the Global Speed extension: the one you pick applies
 to every video in every tab and window, to videos that load later, and after
 Safari restarts. Q switches between 1× and that speed. Until you first press a speed key, videos
-play at whatever the site chooses. A site that resets the speed (on the next
-video, or from its own speed menu) is overruled; one that keeps forcing its own
-speed is left alone on that video after a few tries.
+play at whatever the site chooses.
+
+It is a starting speed, not a lock. Each video starts at it, and so does every
+video when you change it. A speed you then pick in the player's own menu holds
+for that video, and the next video starts at your speed again. Only while a
+video is loading, when sites reset the speed on their own, is a change with no
+tap or key of yours behind it set back; a site that keeps forcing its own speed
+is left alone on that video after a few tries.
 
 A short readout over the video shows the new speed or the jump. Keys are left
 alone while you type in a field, when Command, Control, Option or Shift is held, and on

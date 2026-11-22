@@ -45,12 +45,15 @@
 
   // ---- on/off switch (popup → fgFeatures.mediaKeys, default on) ---------------
   let enabled = true;
+  let carry = false;                             // fgFeatures.speedCarry, default off
   const store = (typeof browser !== 'undefined' && browser.storage && browser.storage.local) ? browser.storage.local
               : (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) ? chrome.storage.local : null;
   const readFlag = (f) => {
     const was = enabled;
+    const wasCarry = carry;
     enabled = !(f && f.mediaKeys === false);
-    if (enabled && !was && typeof applyAll === 'function') applyAll();   // switched back on
+    carry = !!(f && f.speedCarry === true);
+    if ((enabled || carry) && !(was || wasCarry) && typeof applyAll === 'function') applyAll();   // switched back on
   };
   if (store) {
     try {
@@ -112,18 +115,32 @@
 
   // ---- speed: one global rate for every video, in every tab and window ----
   // Like Global Speed: the rate you pick is saved (fgMediaRate) and every
-  // frame applies it to its videos, now and whenever a new one loads, so it
-  // carries over between tabs, windows and Safari restarts. Until you press a
-  // speed key it is unset and videos play at whatever the site chooses.
-  // Sites that change the rate themselves (a reset on the next video, their
-  // own speed menu) are overruled; one that keeps fighting back is left alone.
-  // Listeners also go on each video we touch: media events don't bubble out of
-  // a shadow root, so the document-level ones would miss custom players.
+  // frame starts its videos at it, so it carries over between tabs, windows and
+  // Safari restarts. Until a speed is set, videos play at whatever the site
+  // chooses.
+  //
+  // It is a starting speed, not a lock. Each video gets the global rate when it
+  // starts (a new source), or when the global rate itself changes (a key, or
+  // another tab). After that, whatever it plays at is left alone: a speed you
+  // pick in the player's own menu holds for that video. Only in the first
+  // moments of a load, when sites reset the rate themselves, is a change with
+  // no tap or key behind it set back (and a site that keeps at it is let be).
+  //
+  // "Carry speed changes from the player over to all videos" (fgFeatures.
+  // speedCarry, default off): a change in the player that follows your own tap
+  // or key, outside an ad and outside a load, becomes the global rate, exactly
+  // as a key press would.
+  //
+  // Listeners go on each video we see: media events don't bubble out of a
+  // shadow root, so the document-level ones would miss custom players.
   let globalRate = null;
   let prevRate = null;                           // what Q returns to from 1x (fgMediaPrevRate)
+  let rateGen = 0;                               // bumped whenever the global rate changes
+  const seen = new WeakMap();                    // video -> { src, gen }: started at this global rate
+  const loads = new WeakMap();                   // video -> { at, started }: its last load event
   const tracked = new WeakSet();
-  const fights = new WeakMap();                  // video -> recent forced re-applies
-  let ours = false;
+  const fights = new WeakMap();                  // video -> recent load-time re-applies
+  const written = new WeakMap();                 // video -> the rate we last wrote, until its ratechange arrives
 
   const NSDR_ID = 'hEypv90GzDE';                 // player.js keeps the NSDR at 1x
   const handsOff = () => location.href.includes(NSDR_ID);
@@ -131,6 +148,32 @@
   const clamp = (r) => Math.min(MAX_RATE, Math.max(MIN_RATE, r));
   // Snap to the step's grid (0.05, 0.1, 0.25, 0.5), so 1.25 + 0.1 lands on 1.3 or 1.4 cleanly.
   const step = (r) => clamp(Number((Math.round(r / STEP) * STEP).toFixed(2)));
+  const speedOn = () => enabled || carry;
+
+  // Your own taps, clicks and keys in this frame: a rate change soon after one
+  // is yours; one without is the site's.
+  const GESTURE_MS = 1500;                       // tap/key -> the player's rate change
+  const LOAD_MS = 2500;                          // after a load event, sites reset the rate
+  const MENU_MS = 10000;                         // a tap on a video's own controls -> its speed menu
+  let lastGesture = 0;
+  const controlTaps = new WeakMap();             // video with native controls -> last tap on it
+  for (const t of ['pointerdown', 'pointerup', 'click', 'touchend', 'keydown']) {
+    window.addEventListener(t, (e) => {
+      if (!e.isTrusted) return;
+      lastGesture = Date.now();
+      // Safari's own controls open a native speed menu that sends the page no
+      // events, so choosing in it can take longer than GESTURE_MS.
+      const v = (e.composedPath ? e.composedPath()[0] : e.target);
+      if (v instanceof HTMLVideoElement && v.controls) controlTaps.set(v, lastGesture);
+    }, true);
+  }
+  const isYouTube = /(^|\.)youtube(-nocookie)?\.com$/.test(location.hostname);
+  const inAd = (v) => !!((v.closest && v.closest('.ad-showing, .ad-interrupting')) ||
+    (isYouTube && document.querySelector('.html5-video-player.ad-showing, .html5-video-player.ad-interrupting')));
+  // In Safari's own fullscreen player the page sees no taps, but outside a
+  // load only you change the rate there. (Picture in Picture has no speed
+  // control, so a change there is always the site's.)
+  const nativeFullscreen = (v) => !!(v.webkitDisplayingFullscreen || v.webkitPresentationMode === 'fullscreen');
 
   function gaveUp(v) {
     const now = Date.now();
@@ -139,29 +182,64 @@
     fights.set(v, recent);
     return recent.length > 6;
   }
-  // mode: 'force' to set it now (your own change, another tab's), 'react' when
-  // the page or a new video changed something. One write each: a gliding
+  const srcOf = (v) => v.currentSrc || v.src || '';
+  // why: 'start' (a load event, a sweep, a key, another tab) applies the global
+  // rate only to a video that has not started at it yet; 'site' re-applies it
+  // over a rate the site set itself during a load. One write each: a gliding
   // change over several small steps was tried and measured no better in
   // Safari, possibly worse (fewer frames shown right after the change).
-  function applyTo(v, mode) {
-    if (!enabled || globalRate == null || handsOff()) return;
+  function applyTo(v, why) {
     if (!(v instanceof HTMLVideoElement)) return;          // audio players keep their own speed
     track(v);
+    if (!speedOn() || globalRate == null || handsOff()) return;
+    const s = seen.get(v), src = srcOf(v);
+    if (why !== 'site' && s && s.src === src && s.gen === rateGen) return;   // already started at it
+    seen.set(v, { src, gen: rateGen });
     v.setAttribute('data-kg-rate', String(globalRate));
     if (same(v.playbackRate, globalRate)) return;
-    if (mode === 'react' && gaveUp(v)) return;
-    ours = true;
-    try { v.playbackRate = globalRate; } catch { /* ignore */ }
-    ours = false;
+    if (why === 'site' && gaveUp(v)) return;
+    written.set(v, globalRate);
+    try { v.playbackRate = globalRate; } catch { written.delete(v); }
   }
-  function applyAll(mode) {
-    if (!enabled || globalRate == null) return;
-    for (const v of allVideos(document, [])) applyTo(v, mode || 'force');
+  function applyAll() {
+    if (!speedOn() || globalRate == null) return;
+    for (const v of allVideos(document, [])) applyTo(v, 'start');
+  }
+  function loaded(v, fresh) {
+    const l = loads.get(v);
+    if (fresh) { seen.delete(v); loads.set(v, { at: Date.now(), started: false }); }
+    else if (l) l.at = Date.now();
+    else loads.set(v, { at: Date.now(), started: false });
+  }
+  function onRate(v) {
+    if (!speedOn() || handsOff()) return;
+    const r = v.playbackRate;
+    // The event for our own write (it arrives later, maybe after the global
+    // rate has moved on in a burst of key presses).
+    const w = written.get(v);
+    if (w != null) { written.delete(v); if (same(r, w)) return; }
+    if (!r || (globalRate != null && same(r, globalRate))) return;   // already the global
+    const now = Date.now();
+    const l = loads.get(v);
+    const loadAt = l ? l.at : 0;
+    const sinceLoad = now - loadAt;
+    // A tap counts only if it came after the latest load event: the tap that
+    // started a video must not cover the site resetting its speed afterwards.
+    const tapped = (lastGesture > loadAt && now - lastGesture < GESTURE_MS) ||
+      ((controlTaps.get(v) || 0) > loadAt && now - controlTaps.get(v) < MENU_MS);
+    // readyState 0: the element is (re)loading and resetting its own rate.
+    const yours = (tapped || (nativeFullscreen(v) && sinceLoad > LOAD_MS)) && v.readyState > 0 && !inAd(v);
+    if (yours) {
+      if (carry) setGlobal(clamp(Number(r.toFixed(2))), v);
+      return;                                     // otherwise it holds for this video
+    }
+    if (sinceLoad < LOAD_MS) applyTo(v, 'site');  // the site resetting it while loading
   }
   // Background tabs catch up when they become visible, or when their video
   // starts (the document-level listeners below); only the visible tab walks
   // its whole page, now and every few seconds for videos inside shadow roots,
-  // whose media events never reach the document.
+  // whose media events never reach the document. The walk only starts videos
+  // it has not seen; it never resets one.
   const visible = () => document.visibilityState !== 'hidden';
   const applyIfVisible = () => { if (visible()) applyAll(); };
   document.addEventListener('visibilitychange', applyIfVisible);
@@ -175,32 +253,61 @@
   // pressing used to snap the speed back for a moment.
   const BURST_MS = 220;
   const FRAME_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  let lastPress = 0, applyTimer = 0;
-  function setGlobal(r) {
+  let lastPress = 0, applyTimer = 0, saveSeq = 0;
+  // A new tag on every save: storage only reports keys that changed, so a
+  // plain frame id would be missing from this frame's second save.
+  const saveTag = () => `${FRAME_ID}:${++saveSeq}`;
+  const inBurst = () => Date.now() - lastPress < BURST_MS;
+  // from: the video whose own player set r (carry-over), which is already at it.
+  function setGlobal(r, from) {
     globalRate = r;
+    rateGen++;
+    if (from) seen.set(from, { src: srcOf(from), gen: rateGen });
     clearTimeout(applyTimer);
-    const now = Date.now();
-    const inBurst = now - lastPress < BURST_MS;
-    lastPress = now;
+    const first = !inBurst();
+    lastPress = Date.now();
     const settle = () => {
-      applyAll('force');
+      applyAll();
       if (!store) return;
-      try { const p = store.set({ fgMediaRate: globalRate, fgMediaPrevRate: prevRate, fgMediaRateFrom: FRAME_ID }); if (p && p.catch) p.catch(() => {}); } catch { /* ignore */ }
+      try { const p = store.set({ fgMediaRate: globalRate, fgMediaPrevRate: prevRate, fgMediaRateFrom: saveTag() }); if (p && p.catch) p.catch(() => {}); } catch { /* ignore */ }
     };
-    if (!inBurst) applyAll('force');             // first press: at once
-    applyTimer = setTimeout(settle, BURST_MS);   // and once more, and saved, when the presses stop
+    if (first) applyAll();                       // first press: at once
+    applyTimer = setTimeout(() => { rateGen++; settle(); }, BURST_MS);   // and once more, and saved, when the presses stop
     return r;
   }
   function track(v) {
     if (tracked.has(v)) return;
     tracked.add(v);
-    const reapply = () => applyTo(v, 'react');
-    for (const evt of ['loadedmetadata', 'playing', 'ratechange']) v.addEventListener(evt, reapply);
+    // Found late (inside a shadow root, by the sweep): the site may still be
+    // settling its speed, so give it the same load window.
+    if (!loads.has(v) && v.readyState > 0) loaded(v, false);
+    v.addEventListener('emptied', () => loaded(v, true));    // a new source is on its way
+    v.addEventListener('loadstart', () => { loaded(v, true); applyTo(v, 'start'); });
+    v.addEventListener('loadedmetadata', () => { loaded(v, false); applyTo(v, 'start'); });
+    v.addEventListener('play', () => loaded(v, false));   // a preloaded video being started (Shorts)
+    v.addEventListener('playing', () => {
+      const l = loads.get(v);
+      if (l && !l.started) { l.started = true; l.at = Date.now(); }
+      applyTo(v, 'start');
+    });
+    v.addEventListener('ratechange', () => onRate(v));
   }
+  // Light-DOM videos are found here as soon as they load; track() takes over.
   for (const evt of ['loadstart', 'loadedmetadata', 'playing']) {
-    document.addEventListener(evt, (e) => { if (e.target instanceof HTMLMediaElement) applyTo(e.target, 'react'); }, true);
+    document.addEventListener(evt, (e) => {
+      const v = e.target;
+      if (!(v instanceof HTMLVideoElement) || tracked.has(v)) return;
+      if (evt === 'loadstart') loaded(v, true); else loaded(v, false);
+      applyTo(v, 'start');
+    }, true);
   }
-  const takeRate = (r) => { globalRate = (r == null || !Number(r)) ? null : clamp(Number(r)); applyIfVisible(); };
+  const takeRate = (r) => {
+    const next = (r == null || !Number(r)) ? null : clamp(Number(r));
+    if (next === globalRate || (next != null && globalRate != null && same(next, globalRate))) return;
+    globalRate = next;
+    rateGen++;                                   // a new value from elsewhere: last change wins
+    applyIfVisible();
+  };
   if (store) {
     try {
       const r = store.get(['fgMediaRate', 'fgMediaPrevRate', 'fgSpeed']);
@@ -211,7 +318,7 @@
         const old = d && Number(d.fgSpeed);
         if ((!d || d.fgMediaRate == null) && old && old !== 1) {
           takeRate(old);
-          try { store.set({ fgMediaRate: clamp(old), fgMediaRateFrom: FRAME_ID }); store.remove && store.remove('fgSpeed'); } catch { /* ignore */ }
+          try { store.set({ fgMediaRate: clamp(old), fgMediaRateFrom: saveTag() }); store.remove && store.remove('fgSpeed'); } catch { /* ignore */ }
           return;
         }
         takeRate(d && d.fgMediaRate);
@@ -222,15 +329,18 @@
     browser.storage.onChanged.addListener((ch) => {
       if (!ch.fgMediaRate) return;
       const from = ch.fgMediaRateFrom && ch.fgMediaRateFrom.newValue;
-      if (from === FRAME_ID) return;             // our own save coming back
+      if (typeof from === 'string' && from.startsWith(`${FRAME_ID}:`)) return;   // our own save coming back
       if (ch.fgMediaPrevRate) prevRate = Number(ch.fgMediaPrevRate.newValue) ? clamp(Number(ch.fgMediaPrevRate.newValue)) : null;
       takeRate(ch.fgMediaRate.newValue);
     });
   }
 
+  // The speed a key starts from: what this video plays at (a speed set in its
+  // own player counts), or, mid-burst, the speed the presses so far reached.
+  const baseRate = (v) => (inBurst() && globalRate != null) ? globalRate : (v.playbackRate || globalRate || 1);
   // Q: from any speed to 1x, remembering it; at 1x, back to the remembered one.
   function toggleNormal(v) {
-    const cur = globalRate != null ? globalRate : (v.playbackRate || 1);
+    const cur = baseRate(v);
     if (!same(cur, 1)) { prevRate = cur; return setGlobal(1); }
     if (prevRate && !same(prevRate, 1)) return setGlobal(prevRate);
     return setGlobal(1);
@@ -343,10 +453,12 @@
     e.stopImmediatePropagation();
     swallowing.add(e.code);
 
+    // The NSDR stays at 1x, and pressing a speed key there changes nothing.
+    if (handsOff() && (action === 'reset' || action === 'slower' || action === 'faster')) { flash(v, '1×'); return; }
     switch (action) {
       case 'reset': flash(v, fmtRate(toggleNormal(v))); break;
-      case 'slower': flash(v, fmtRate(setGlobal(step((globalRate || v.playbackRate || 1) - STEP)))); break;
-      case 'faster': flash(v, fmtRate(setGlobal(step((globalRate || v.playbackRate || 1) + STEP)))); break;
+      case 'slower': flash(v, fmtRate(setGlobal(step(baseRate(v) - STEP)))); break;
+      case 'faster': flash(v, fmtRate(setGlobal(step(baseRate(v) + STEP)))); break;
       case 'back': seek(v, -SEEK); flash(v, `−${SEEK} s`); break;
       case 'forward': seek(v, SEEK); flash(v, `+${SEEK} s`); break;
       case 'fullscreen': toggleFullscreen(v); break;
