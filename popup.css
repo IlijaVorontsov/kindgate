@@ -13,6 +13,8 @@ body {
   html { height: 600px; overflow: hidden; }
   body { height: 600px; overflow-y: auto; overscroll-behavior: contain; }
 }
+/* Options that only exist on iPhone and iPad; popup.js marks the Mac. */
+html.kg-mac .ios-only { display: none !important; }
 header { margin-bottom: 8px; }
 h1 { font-size: 22px; margin: 0; font-family: var(--kg-font-display); font-weight: 600; letter-spacing: -0.01em; }
 .wordmark { display: flex; align-items: center; gap: 9px; }

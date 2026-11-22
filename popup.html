@@ -36,7 +36,7 @@
     <div class="cat-body">
       <p class="muted">For roughly 15–30 minutes after waking, the parts of the brain
         that weigh things up are still coming back online, so behaviour runs on
-        whatever the context cues. Inside this window the phone shows your
+        whatever the context cues. Inside this window Safari shows your
         sequence instead of a feed — no questions, nothing to decide.</p>
 
       <div class="win" style="margin-top:10px">
@@ -156,7 +156,7 @@
 
       <details class="sub" id="sub-night">
         <summary>Night mode</summary>
-        <p class="muted">Inside the night window, <strong>every tab</strong> opened in Safari lands on the can’t-sleep page. “Continue anyway” clears only the tab you tapped it in — a new tab starts over. Sites listed here are always allowed (one per line, e.g. <code>maps.apple.com</code>).</p>
+        <p class="muted">Inside the night window, <strong>every tab</strong> opened in Safari lands on the can’t-sleep page. “Continue anyway” clears only the tab you used it in — a new tab starts over. Sites listed here are always allowed (one per line, e.g. <code>maps.apple.com</code>).</p>
         <textarea id="nightAllow" rows="3" placeholder="maps.apple.com&#10;mybank.example" style="width:100%"></textarea>
         <h3>Can’t-sleep audio (optional)</h3>
         <input type="url" id="nsdr" placeholder="Default: Huberman Lab 20-minute NSDR" inputmode="url" style="width:100%">
@@ -271,7 +271,7 @@
         <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytAutoplay" data-feature="ytAutoplay"><span><strong>No autoplay</strong><br><span class="muted">No next video, no inline previews in feeds, no end-screen cards.</span></span></label>
         <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytGuide" data-feature="ytGuide"><span><strong>Hide “Explore” and “More from YouTube” in the menu</strong><br><span class="muted">Desktop site: Music, Movies, Gaming, Premium, Kids and the like.</span></span></label>
       </details>
-      <details class="sub" id="sub-yt-player">
+      <details class="sub ios-only" id="sub-yt-player">
         <summary>Player &amp; navigation</summary>
         <label class="row"><input type="checkbox" id="f_ytTabBar" data-feature="ytTabBar"><span><strong>Subscriptions / You bar on watch pages</strong></span></label>
         <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytPip" data-feature="ytPip"><span><strong>Picture in Picture button</strong></span></label>
@@ -283,7 +283,7 @@
       <label class="row" style="margin-top:10px"><input type="checkbox" id="hidethumbs"><span><strong>Hide thumbnails in feeds</strong><br><span class="muted">Turn off if the Subscriptions list stalls while scrolling.</span></span></label>
       <div class="field"><label for="quality">Default quality</label>
         <select id="quality"><option value="auto">Auto</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option><option value="240">240p</option><option value="144">144p</option></select></div>
-      <p class="muted">Quality is best effort: YouTube’s player API is out of an extension’s reach on iOS, so this sets the preference YouTube remembers rather than forcing each video.</p>
+      <p class="muted">Quality is best effort: YouTube’s player API is out of an extension’s reach, so this sets the preference YouTube remembers rather than forcing each video.</p>
     </div>
   </details>
 
@@ -344,9 +344,9 @@
           that value to land. Name it something short and unmistakable — the link
           matches on the name, so renaming it later breaks the link.</p>
         <div class="field"><label for="scInstall">Install link</label><input type="url" id="scInstall" placeholder="iCloud share link" inputmode="url"></div>
-        <p class="muted">Made one worth keeping? In Shortcuts, tap ⋯ → Share →
-          Copy iCloud Link, and paste it here so it’s one tap to reinstall — on a new
-          phone, or for anyone you pass this extension to.</p>
+        <p class="muted">Made one worth keeping? In Shortcuts, use Share →
+          Copy iCloud Link on it, and paste it here so it’s one step to reinstall — on a new
+          device, or for anyone you pass this extension to.</p>
         <button type="button" id="scInstallOpen">Open install link</button>
       </details>
 

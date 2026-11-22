@@ -10,6 +10,9 @@
   const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
   const api = (typeof browser !== 'undefined' ? browser : chrome).storage.local;
   const $ = (id) => document.getElementById(id);
+  // The Mac, not an iPad with a trackpad (which also reports MacIntel, but has
+  // touch points): hide the options that only make sense on iPhone and iPad.
+  if (/^Mac/.test(navigator.platform) && !navigator.maxTouchPoints) document.documentElement.classList.add('kg-mac');
 
   function bars(container, counts, labelOf) {
     container.replaceChildren();
