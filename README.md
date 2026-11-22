@@ -36,6 +36,7 @@ way through.
 - [Brand](#brand)
 - [Development](#development)
 - [FAQ](#faq)
+- [Check it yourself](#check-it-yourself)
 - [License](#license)
 
 ## What it does
@@ -609,6 +610,103 @@ affects Safari. See the note under [What it does](#what-it-does).
 
 **Is anything sent anywhere?** No. See [Privacy](#privacy).
 
+## Check it yourself
+
+Kindgate asks for access to every website. This section says what it does with
+that access, where to look in the code, and how far a check can go.
+
+### The scripts that run on all websites
+
+Four content scripts match `<all_urls>` in `manifest.json`. The rest only run
+on YouTube and Instagram.
+
+| Script | Why it runs everywhere | What it reads from the page |
+| --- | --- | --- |
+| `checkin.js` | The night page appears on any site during your night window, and the morning coffee reminder can show on any site. Apart from those two it does nothing on sites other than YouTube and Instagram. Top frame only. | The host name, to check your night allow-list. In the logs every site other than the two is written as `other`. |
+| `pause.js` | The pause screen has to appear on whatever site is on your list or on a bundled list you switched on. Top frame only. | The host name, compared on the device with those lists. The pause log never holds a URL or host name. |
+| `warm.js` | The warm night overlay covers every page. Top frame only. It also tells the background script the host name of each page, which is how the app's checklist knows a site is allowed (see below). | The host name, for that report and for your skip list. |
+| `media-keys.js` | Speed, seek and fullscreen keys work on any video, so it listens for `keydown` on every page, in every frame. | The physical key code of each key press, looked up in a map of six keys. Other keys, keys with a modifier and keys typed into a field are passed on untouched. It stores the chosen speed and nothing about what was typed. |
+
+None of the four makes a network request. The one `fetch` in the code
+(`pause.js`) reads a list bundled inside the extension.
+
+### What is stored where
+
+| Where | What | Who can read it |
+| --- | --- | --- |
+| The extension's own storage (`browser.storage.local`) | All settings; the cue log (time, feeling, `youtube` / `instagram` / `other`); the wins log (time, the plan you tapped, the same three site names); the pause log (time, feeling, outcome, within goal or not); the PIN hash; the result of the pause self-check; a diagnostic for the NSDR link that holds a YouTube path. The popup also remembers which of its sections are open, in its own page storage. | Kindgate only. Removed with the extension. |
+| YouTube's and Instagram's own `localStorage` | `fg:features`, a copy of the feature switches, so the scripts can act before the page draws. On YouTube also the site's own `yt-player-quality` setting when a default quality is set. | **Those sites can read it**, and can tell from it that Kindgate is installed. It stays after Kindgate is removed, until you clear the site's data. |
+| The page's `sessionStorage`, until the tab closes | On YouTube and Instagram: redirect counters and a session start time. On any site where you tap "continue anyway" at night: a marker `fg:nightPass`. | The site the tab shows. |
+| The page itself | Kindgate's cards and screens are ordinary page elements, so the site they are drawn over can read their text: the feeling you tap, your plan labels, your goal. | The site the tab shows. |
+| The clipboard | The message for Claude, only when you tap that button. It holds the time, the window, the feeling and the plan, not the site. | Whatever you paste it into. |
+
+When a button on a Kindgate card opens another address (claude.ai, the NSDR
+video, a link you set for a plan), Safari may tell that address which site you
+came from, as with any link.
+
+### What crosses to the app
+
+`background.js` sends native messages to the app that carries the extension.
+They stay on the device.
+
+- When the extension starts: a timestamp and **the list of sites you have
+  granted the extension** (`permissions.getAll().origins`).
+- When a page loads, at most once a minute per name: `youtube.com`,
+  `instagram.com` or `other`, a timestamp, and whether the page was opened
+  from the Home Screen. `warm.js` passes the full host name to the background
+  script, which reduces it to those three before anything is sent on.
+
+On iPhone and iPad the handler (`app/Kindgate Extension/SafariWebExtensionHandler.swift`)
+keeps these in the App Group the app reads for its checklist. A message it
+does not recognise is written to the system log. The Swift code has no network
+call.
+
+### Ask an AI assistant
+
+[AUDIT.md](AUDIT.md) holds a prompt to paste into an AI assistant. It makes the
+assistant read every file, quote the code for each finding and compare it with
+the claims here and in the privacy policy. Its limits are listed in that file;
+the main ones: an assistant can miss things, and it reads the source, not the
+app you installed.
+
+### Compare an installed Mac app with the source
+
+On a Mac the extension's files sit readable inside the app. From a clone of
+this repository:
+
+```bash
+python3 scripts/hashes.py --ref <tag>                               # SHA-256 list of the files that ship
+bash scripts/verify-install.sh /Applications/Kindgate.app <tag>     # compare the installed app with it
+```
+
+`hashes.py` lists exactly the files `build.sh` stages, by reading the `STRIP`
+list from it. `verify-install.sh` prints every file in the app that differs
+from the source at that tag, is missing or is extra.
+
+### What a check cannot show
+
+- **There is no App Store build and no release tag yet.** The check script has
+  only been tried on staged copies of the extension, not on an app from the
+  store. Xcode or the store may add or rewrite files; which ones is not known
+  yet.
+- **Source at a tag, not the store binary.** Reading the code, by eye or with
+  an assistant, checks this repository. Only the hash comparison ties an
+  installed app to it, and only for the extension's scripts, styles, lists,
+  fonts and images.
+- **The Swift code cannot be compared.** Apple signs and repackages the
+  compiled app, so nobody can show that it equals the source. That covers the
+  app and the native message handler.
+- **The Mac app is not in this repository.** `build.sh --mac` keeps the app
+  and the message handler that Apple's converter generates; `app/` is used for
+  iPhone and iPad only.
+- **iPhone and iPad only in part.** The files are not reachable on the device.
+  The same source feeds both builds, so a Mac check is indirect evidence for
+  the iPhone build of the same version, not proof.
+- **"Data Not Collected"** on the App Store is the developer's own
+  declaration. Apple does not verify it.
+
+Found something that does not match? See [SECURITY.md](SECURITY.md).
+
 ## License
 
 [Mozilla Public License 2.0](LICENSE).
@@ -618,5 +716,8 @@ separately under the SIL Open Font License 1.1; see `fonts/OFL.txt`. The pause
 lists in `lists/` come from StevenBlack/hosts under the MIT License; see
 `lists/LICENSE`. Both files ship inside the extension, and the app and the popup
 show the notices under About, Open source licences.
+
+The name "Kindgate" and the icon are not covered by it either. Forks are
+welcome under another name and icon; see [TRADEMARK.md](TRADEMARK.md).
 
 Kindgate is not affiliated with YouTube, Instagram, Apple or Mozilla.

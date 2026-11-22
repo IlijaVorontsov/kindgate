@@ -40,7 +40,7 @@ APP_GROUP="group.$BUNDLE"
 # Keep in sync with CLAUDE.md when adding non-extension files to the root.
 # docs/ is ignored by git but listed anyway: an untracked local copy would
 # otherwise be rsynced straight into the signed .appex.
-STRIP="app docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md"
+STRIP="app docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md SECURITY.md CONTRIBUTING.md TRADEMARK.md AUDIT.md"
 # Anchored to the repo root ("/name"): a bare name matches at any depth, which
 # used to drop lists/LICENSE, the MIT notice that has to ship with the lists.
 STAGE_EXCLUDES=(--exclude '.*'); for s in $STRIP; do STAGE_EXCLUDES+=(--exclude "/$s"); done
