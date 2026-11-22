@@ -4,6 +4,7 @@
 //
 //  * Outside your windows: "what were you feeling ten seconds ago?" — one tap
 //    to log the cue, then a toast with the week's pattern. Noticing, no verdict.
+//    Can be switched off in the popup (fgCheckinOn).
 //
 //  * Inside a window (after work, night): the decision was made earlier, so the
 //    card doesn't ask you to decide — it shows the plans you set, one tap each
@@ -853,8 +854,11 @@
     if (night && allowedAtNight(pre.fgNightAllow)) return;
     // One snooze and one "continued" grace for the whole of Safari at night.
     if (night) { LAST = 'fgLast_night'; SNOOZE = 'fgSnooze_night'; }
-    const data = await load(['fgCues', 'fgWins', 'fgPlans', 'fgMorningSteps', 'fgMorningProgress', 'fgCoffeeDelay', 'fgShortcutName', 'fgNsdrUrl', 'fgClaudeOn', LAST, SNOOZE]);
+    const data = await load(['fgCues', 'fgWins', 'fgPlans', 'fgMorningSteps', 'fgMorningProgress', 'fgCoffeeDelay', 'fgShortcutName', 'fgNsdrUrl', 'fgClaudeOn', 'fgCheckinOn', LAST, SNOOZE]);
     data.fgWindows = pre.fgWindows;
+    // The daytime card has its own switch in the popup, on unless switched off.
+    // The windows are not its business: each has a switch of its own.
+    if (!win && data.fgCheckinOn === false) return;
     const snoozed = Number(data[SNOOZE] || 0) > Date.now();
     // In a window the card shows on every open (a snoozed return included);
     // outside one the normal 20-minute cooldown applies.

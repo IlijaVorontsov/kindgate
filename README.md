@@ -84,15 +84,38 @@ builds: `bash build.sh --release` archives and exports a signed `.ipa`, and
 key, team id and tester checklist are in the private ops repo's
 [TestFlight runbook](https://github.com/IlijaVorontsov/kindgatex/blob/main/docs/testflight.md).
 
+Each iPhone build carries a privacy manifest for the app and one for the
+extension, and declares `ITSAppUsesNonExemptEncryption` as false: Kindgate has
+no cryptography of its own and makes no network connections; the pause PIN is
+hashed by Safari's built-in WebCrypto. `--release` checks both in the archive
+before exporting.
+
+`bash build.sh --simulator` builds the iPhone app for the iOS Simulator, with
+no device, certificate or Apple ID, and checks the same things in the built
+app. It is the quick way to see that everything compiles.
+
 **On a Mac**, `bash build.sh --mac` builds a macOS-only project in a
 `Kindgate-Xcode-mac` folder beside this one, signs it with your Apple
 Development certificate, copies `Kindgate.app` to `~/Applications` and opens it
 once so Safari picks up the extension. Then tick Kindgate in Safari → Settings →
-Extensions and allow it on every website. Without Xcode, `bash build.sh --stage`
+Extensions and allow it on every website. With no certificate on the Mac the
+build is signed to run locally instead. Safari treats that as an unsigned
+extension: it stays hidden until you tick *Allow unsigned extensions* under
+Safari → Settings → Developer, and Safari clears that box every time it quits.
+Add `--no-install` to build without copying or opening the app. Without Xcode, `bash build.sh --stage`
 only stages the extension folder: load it from Safari → Settings → Developer →
 *Add Temporary Extension…* (turn on *Allow unsigned extensions* first). Safari
 drops a temporary extension when it quits or after 24 hours, so this is for
 trying changes, not daily use.
+
+The script needs Xcode 26 or later. Xcode 27.2 writes new projects in its
+JSON format (`project.xcproj`); the script converts the project back to
+`project.pbxproj` with `xcodebuild -convert-project pbxproj`, because that is
+the format it edits and both Xcode versions build it. The builds run on the
+current system and the two before it (iOS 18, macOS 15, or later);
+`KINDGATE_IOS_MIN` and `KINDGATE_MAC_MIN` change that. `KINDGATE_OUT=<folder>`
+puts the staged extension, the project and the build products somewhere else,
+which keeps a trial build away from a folder Safari has loaded.
 
 Then open Kindgate on the phone. Its [setup checklist](#the-container-app)
 covers enabling the extension, allowing the sites and deleting the apps, and
@@ -106,7 +129,8 @@ each step turns green by itself once it is done.
 1. Copy this folder to your Mac. Install Xcode from the App Store and open it
    once so it installs its command-line tools.
 
-2. Convert the web extension into an iOS app project:
+2. Convert the web extension into an iOS app project (from Xcode 26 the tool
+   is called `safari-web-extension-packager`; the options are the same):
 
    ```bash
    xcrun safari-web-extension-converter ~/Downloads/Kindgate \
@@ -222,6 +246,10 @@ avoiding something, between tasks, lonely, stressed, just habit, or came for
 something specific. The card closes on that single tap, and a toast then shows
 your pattern for the week with a **Leave instead** button before fading by
 itself.
+
+The card can be switched off at the top of Check-in & cues in the popup. It is
+on by default. Off stops only this daytime card: the morning, after-work and
+night windows have their own switches, and the log and its summary stay.
 
 Tapping the extension's icon in Safari, from the "aA" menu in the address bar,
 opens the full breakdown by feeling, site, hour and weekday, and the export and
@@ -443,11 +471,19 @@ messages are throttled to one a minute per site.
 A row that was green and has gone quiet for a week turns amber rather than
 silently staying green, so an extension switched off in Settings shows up.
 
+Under the checklist an **About** section links the
+[privacy policy](https://kindgate.app/privacy) and the
+[support page](https://kindgate.app/support) and shows the open source notices.
+
 ### The popup
 
 Grouped into collapsible categories, Check-in & cues, Evening plan, Pause,
-YouTube & feeds, and Safari & privacy, with sub-sections inside the larger ones.
-Which sections are open is remembered.
+YouTube & feeds, Safari & privacy, and About, with sub-sections inside the
+larger ones. Which sections are open is remembered.
+
+About links the privacy policy and the support page, which open in a tab, and
+lists the open source licences. The font and list licence texts are read from
+the bundle, so they show offline.
 
 Every YouTube and Instagram measure is an individual toggle. For YouTube: open
 on Subscriptions, hide Shorts, hide recommendations, hide comments, no autoplay,
@@ -477,8 +513,9 @@ upsell.js          Blocks the App Store banner and "open in app" nags
 popup.html/js/css  Settings and the cue summary behind the extension icon
 background.js      Status heartbeat: tells the container app the extension is on
 
-app/               The container app: setup checklist, Swift, overlaid on the
-                   project the converter generates
+app/               The container app: setup checklist, Swift, entitlements and
+                   the two privacy manifests (PrivacyInfo.xcprivacy), overlaid
+                   on the project the converter generates
 build.sh           Convert, sign and install onto a paired iPhone or this Mac (--mac),
                    stage for Add Temporary Extension (--stage), or archive for TestFlight
 scripts/           changelog.py (release notes) and app-icon.sh (the app icon build.sh installs)
@@ -577,6 +614,9 @@ affects Safari. See the note under [What it does](#what-it-does).
 [Mozilla Public License 2.0](LICENSE).
 
 The bundled typefaces in `fonts/` are not covered by it. They are licensed
-separately under the SIL Open Font License 1.1; see `fonts/OFL.txt`.
+separately under the SIL Open Font License 1.1; see `fonts/OFL.txt`. The pause
+lists in `lists/` come from StevenBlack/hosts under the MIT License; see
+`lists/LICENSE`. Both files ship inside the extension, and the app and the popup
+show the notices under About, Open source licences.
 
 Kindgate is not affiliated with YouTube, Instagram, Apple or Mozilla.

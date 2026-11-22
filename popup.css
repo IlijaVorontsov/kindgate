@@ -157,3 +157,15 @@ details.sub .assess-result { background: var(--kg-cream); }
 
 .btnrow { display: flex; gap: 8px; margin-top: 8px; }
 .mono { width: 100%; font-family: var(--kg-font-mono); font-size: 12px; margin-top: 8px; }
+
+/* About: links out, and the bundled licence texts */
+a { color: var(--kg-amber-ink); }
+.links { display: flex; gap: 18px; font-size: 14px; font-weight: 600; }
+.licence {
+  margin: 0; padding: 10px; max-height: 260px; overflow: auto; white-space: pre-wrap;
+  font: 11.5px/1.45 var(--kg-font-mono); border-radius: var(--kg-radius-control); background: var(--kg-cream);
+}
+@media (prefers-color-scheme: dark) {
+  a { color: var(--kg-honey); }
+  .licence { background: var(--kg-ink); }
+}

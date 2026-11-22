@@ -121,6 +121,11 @@
   api.get(['fgBlockUpsell']).then((d) => { blockupsell.checked = !(d && d.fgBlockUpsell === false); });
   blockupsell.addEventListener('change', () => api.set({ fgBlockUpsell: blockupsell.checked }));
 
+  // Daytime check-in card: on unless switched off, like the pause.
+  const checkinOn = $('checkinOn');
+  api.get(['fgCheckinOn']).then((d) => { checkinOn.checked = !(d && d.fgCheckinOn === false); });
+  checkinOn.addEventListener('change', () => api.set({ fgCheckinOn: checkinOn.checked }));
+
   const hidethumbs = $('hidethumbs');
   api.get(['fgHideThumbs']).then((d) => { hidethumbs.checked = !(d && d.fgHideThumbs === false); });
   hidethumbs.addEventListener('change', () => api.set({ fgHideThumbs: hidethumbs.checked }));
@@ -388,6 +393,33 @@
   const claudeOn = $('claudeOn');
   api.get(['fgClaudeOn']).then((d) => { claudeOn.checked = !!(d && d.fgClaudeOn); });
   claudeOn.addEventListener('change', () => api.set({ fgClaudeOn: claudeOn.checked }));
+
+  // ---- About: links out, and the licence texts that ship in the bundle
+  // A link followed inside the popup loads in the popup. Open it in a tab
+  // instead (tabs.create needs no permission) and get the popup out of the
+  // way; without the API the link's own target="_blank" still applies.
+  const ext = typeof browser !== 'undefined' ? browser : chrome;
+  for (const a of document.querySelectorAll('a[data-ext]')) a.addEventListener('click', (e) => {
+    if (!(ext.tabs && ext.tabs.create)) return;
+    e.preventDefault();
+    const fallback = () => { window.open(a.href, '_blank', 'noopener'); };
+    try {
+      const r = ext.tabs.create({ url: a.href });
+      if (r && typeof r.then === 'function') r.then(() => window.close(), fallback);
+    } catch { fallback(); }
+  });
+  const licenceText = $('licenceText');
+  for (const b of document.querySelectorAll('button[data-licence]')) b.addEventListener('click', async () => {
+    const path = b.dataset.licence;
+    if (!licenceText.hidden && licenceText.dataset.path === path) { licenceText.hidden = true; return; }   // second tap hides
+    try {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(String(r.status));
+      licenceText.textContent = await r.text();
+    } catch { licenceText.textContent = 'This licence text could not be read. It is in the source code at ' + path + '.'; }
+    licenceText.dataset.path = path;
+    licenceText.hidden = false;
+  });
 
   // ---- Remember which sections are open (popup-local, per device)
   for (const dt of document.querySelectorAll('details[id]')) {
