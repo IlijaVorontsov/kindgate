@@ -215,7 +215,8 @@
   }
 
   function onRotate() {
-    if (!isWatch() || !F.ytRotate) { clearPrompt(); return; }
+    // A Mac window turning wide is not a phone being rotated.
+    if (DESKTOP || !isWatch() || !F.ytRotate) { clearPrompt(); return; }
     const v = video();
     if (!v) return;
 

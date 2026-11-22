@@ -10,3 +10,4 @@
 - The settings popup scrolls on the Mac; it used to cut off below the first
   open section.
 - The toolbar icon has transparent corners instead of a white square around it, and comes in sizes made for the Mac toolbar.
+- Resizing a YouTube window on the Mac from tall to wide no longer starts the video and asks for fullscreen, as if a phone had been rotated.
