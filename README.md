@@ -579,4 +579,7 @@ affects Safari. See the note under [What it does](#what-it-does).
 The bundled typefaces in `fonts/` are not covered by it. They are licensed
 separately under the SIL Open Font License 1.1; see `fonts/OFL.txt`.
 
+The name "Kindgate" and the icon are not covered by it either. Forks are
+welcome under another name and icon; see [TRADEMARK.md](TRADEMARK.md).
+
 Kindgate is not affiliated with YouTube, Instagram, Apple or Mozilla.
