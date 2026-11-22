@@ -131,6 +131,58 @@
     return { week, streak };
   }
 
+  // ---- closed shadow root -------------------------------------------------------
+  // The cards, pages and toasts hold what the user feels and plans.
+  // Drawn as ordinary elements, the site underneath could read all of it. So
+  // each one goes into a closed shadow root: the page sees an empty <div>, not
+  // what is inside it.
+  //
+  // checkin.css is loaded by the manifest for the page, and page styles stop at a
+  // shadow root, so the same file is read from the bundle and adopted inside.
+  // brand.css needs nothing: custom properties and fonts declared on the page
+  // are inherited across the boundary.
+  //
+  // If the stylesheet cannot be read, or shadow roots are missing, the screen is
+  // drawn in the page as it was before. A working screen comes first.
+  let stylesReady = null, cssText = null;
+  const loadStyles = () => stylesReady || (stylesReady = (async () => {
+    try {
+      const rt = (typeof browser !== 'undefined' && browser.runtime) || (typeof chrome !== 'undefined' && chrome.runtime);
+      const r = await fetch(rt.getURL('checkin.css'));
+      if (r.ok) cssText = await r.text();
+    } catch { /* cssText stays null: draw in the page */ }
+  })());
+  const shadowHosts = new WeakMap();
+  // `kind` is "screen" or "toast", so the other Kindgate scripts can tell that
+  // something is up without seeing what.
+  function attach(node, kind) {
+    let host = null;
+    if (cssText !== null) {
+      try {
+        host = document.createElement('div');
+        host.setAttribute('data-kg', kind);
+        const shadow = host.attachShadow({ mode: 'closed' });
+        try {
+          const sheet = new CSSStyleSheet();
+          sheet.replaceSync(cssText);
+          shadow.adoptedStyleSheets = [sheet];
+        } catch {
+          const style = document.createElement('style');
+          style.textContent = cssText;
+          shadow.appendChild(style);
+        }
+        shadow.appendChild(node);
+        shadowHosts.set(node, host);
+      } catch { host = null; }
+    }
+    (document.body || document.documentElement).appendChild(host || node);
+  }
+  function detach(node) {
+    const host = shadowHosts.get(node);
+    if (host) { shadowHosts.delete(node); host.remove(); }
+    node.remove();
+  }
+
   // ---- UI helpers -------------------------------------------------------------
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -203,9 +255,9 @@
     out.type = 'button';
     onTap(out, () => leave());
     toast.appendChild(out);
-    (document.body || document.documentElement).appendChild(toast);
+    attach(toast, 'toast');
     requestAnimationFrame(() => toast.classList.add('kg-toast-in'));
-    setTimeout(() => { toast.classList.remove('kg-toast-in'); setTimeout(() => toast.remove(), 400); }, TOAST_MS);
+    setTimeout(() => { toast.classList.remove('kg-toast-in'); setTimeout(() => detach(toast), 400); }, TOAST_MS);
   }
   const hhmm = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -274,9 +326,9 @@
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     document.documentElement.classList.add('kg-checkin-open');
-    (document.body || document.documentElement).appendChild(root);
+    attach(root, 'screen');
     let tick = null;
-    const close = () => { clearInterval(tick); themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { clearInterval(tick); themeColor(null); detach(root); document.documentElement.classList.remove('kg-checkin-open'); };
 
     const page = el('div', 'kg-timer-page');
     root.appendChild(page);
@@ -386,9 +438,9 @@
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     document.documentElement.classList.add('kg-checkin-open');
-    (document.body || document.documentElement).appendChild(root);
+    attach(root, 'screen');
     let breathTimer = null;
-    const close = () => { if (breathTimer) clearTimeout(breathTimer); themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { if (breathTimer) clearTimeout(breathTimer); themeColor(null); detach(root); document.documentElement.classList.remove('kg-checkin-open'); };
 
     // Audio opens another app, so it navigates; everything else stays here.
     const winAndStay = async (label, msg) => {
@@ -540,18 +592,19 @@
       `\u2615 Coffee\u2019s fine now \u2014 it\u2019s been ${mins} minutes since you got up.`));
     const ok = el('button', 'kg-toast-btn', 'Got it');
     ok.type = 'button';
-    onTap(ok, async () => { await save({ fgCoffeeAck: today() }); toast.remove(); });
+    onTap(ok, async () => { await save({ fgCoffeeAck: today() }); detach(toast); });
     toast.appendChild(ok);
-    (document.body || document.documentElement).appendChild(toast);
+    attach(toast, 'toast');
     requestAnimationFrame(() => toast.classList.add('kg-toast-in'));
   }
 
   async function maybeCoffeeAlert(data) {
-    if (document.querySelector('.kg-checkin, .kg-sleep, .kg-timer, .kg-morning, .kg-pause, .kg-toast')) return;
     const at = coffeeAt(data);
     if (!at || Date.now() < at) return;
     if (data.fgCoffeeAck === today()) return;
     if (Date.now() - at > 6 * 3600 * 1000) return;     // stale; don't nag all evening
+    await loadStyles();
+    if (document.querySelector('[data-kg], .kg-checkin, .kg-sleep, .kg-timer, .kg-morning, .kg-pause, .kg-toast')) return;
     coffeeToast(Number(data.fgCoffeeDelay) || DEFAULT_COFFEE_MIN);
   }
   function morningProgress(data) {
@@ -574,11 +627,11 @@
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     document.documentElement.classList.add('kg-checkin-open');
-    (document.body || document.documentElement).appendChild(root);
+    attach(root, 'screen');
     const page = el('div', 'kg-morning-page');
     root.appendChild(page);
     let tick = null;
-    const close = () => { if (tick) clearInterval(tick); themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { if (tick) clearInterval(tick); themeColor(null); detach(root); document.documentElement.classList.remove('kg-checkin-open'); };
     const persist = () => save({ fgMorningProgress: { day: today(), done: [...done], started: prog.started, wokeAt: prog.wokeAt || 0, complete: done.size >= steps.length } });
 
     page.appendChild(el('div', 'kg-morning-kicker', `${win.name} \u00B7 ${hhmm(new Date())}`));
@@ -707,8 +760,8 @@
     const card = el('div', 'kg-card');
     root.appendChild(card);
     document.documentElement.classList.add('kg-checkin-open');
-    (document.body || document.documentElement).appendChild(root);
-    const close = () => { themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    attach(root, 'screen');
+    const close = () => { themeColor(null); detach(root); document.documentElement.classList.remove('kg-checkin-open'); };
     return { card, close };
   }
 
@@ -841,7 +894,9 @@
   // the two runs overlap on the first `await` and mount two cards on top of
   // each other, and the second one's "continue" is then unreachable.
   let starting = false;
-  const OVERLAYS = '.kg-checkin, .kg-sleep, .kg-timer, .kg-morning, .kg-pause';
+  // A screen in its shadow root shows as its host; the class names are for one
+  // drawn in the page (see attach).
+  const OVERLAYS = '[data-kg="screen"], .kg-checkin, .kg-sleep, .kg-timer, .kg-morning, .kg-pause';
 
   async function start() {
     if (starting) return;
@@ -881,6 +936,8 @@
     if (!win && Date.now() - Number(data[LAST] || 0) < COOLDOWN_MS) return;
     if (night && !snoozed && hasTabPass()) return;                                   // this tab was continued
     if (!night && win && !snoozed && Date.now() - Number(data[LAST] || 0) < 60 * 1000) return; // just continued
+    await loadStyles();
+    if (document.querySelector(OVERLAYS)) return;   // pause.js drew while we waited
     if (win) save({ fgWindowShownAt: Date.now(), fgWindowShownKey: win.key });   // popup status line
     if (win && snoozed) renderTimer(data, win, Number(data[SNOOZE]));
     else if (win && win.key === 'night') renderSleep(data, win);

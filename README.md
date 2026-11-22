@@ -188,6 +188,10 @@ account, no server and no analytics.
 - The one thing that leaves the phone does so only when you press send. The
   optional "talk it through with Claude" button composes a short message about
   the moment, copies it to the clipboard and opens claude.ai for you to paste.
+- Kindgate's cards, pages and toasts are drawn inside a closed shadow root, so
+  the site underneath cannot read the feeling you tapped, your plans or your
+  goal. It can still tell that something is covering it, and where on the
+  screen you tapped.
 - Links that Kindgate opens for you (claude.ai, the NSDR recording, your own
   "instead" links) are opened without a referrer, so the site you land on is
   not told which site you came from.

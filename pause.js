@@ -169,6 +169,58 @@
   const brand = (name, fallback) =>
     (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || fallback;
 
+  // ---- closed shadow root -------------------------------------------------------
+  // The pause screen holds the feeling tapped, the goal and the replacement plan.
+  // Drawn as ordinary elements, the site underneath could read all of it. So
+  // each one goes into a closed shadow root: the page sees an empty <div>, not
+  // what is inside it.
+  //
+  // pause.css is loaded by the manifest for the page, and page styles stop at a
+  // shadow root, so the same file is read from the bundle and adopted inside.
+  // brand.css needs nothing: custom properties and fonts declared on the page
+  // are inherited across the boundary.
+  //
+  // If the stylesheet cannot be read, or shadow roots are missing, the screen is
+  // drawn in the page as it was before. A working screen comes first.
+  let stylesReady = null, cssText = null;
+  const loadStyles = () => stylesReady || (stylesReady = (async () => {
+    try {
+      const rt = (typeof browser !== 'undefined' && browser.runtime) || (typeof chrome !== 'undefined' && chrome.runtime);
+      const r = await fetch(rt.getURL('pause.css'));
+      if (r.ok) cssText = await r.text();
+    } catch { /* cssText stays null: draw in the page */ }
+  })());
+  const shadowHosts = new WeakMap();
+  // `kind` is "screen" or "toast", so the other Kindgate scripts can tell that
+  // something is up without seeing what.
+  function attach(node, kind) {
+    let host = null;
+    if (cssText !== null) {
+      try {
+        host = document.createElement('div');
+        host.setAttribute('data-kg', kind);
+        const shadow = host.attachShadow({ mode: 'closed' });
+        try {
+          const sheet = new CSSStyleSheet();
+          sheet.replaceSync(cssText);
+          shadow.adoptedStyleSheets = [sheet];
+        } catch {
+          const style = document.createElement('style');
+          style.textContent = cssText;
+          shadow.appendChild(style);
+        }
+        shadow.appendChild(node);
+        shadowHosts.set(node, host);
+      } catch { host = null; }
+    }
+    (document.body || document.documentElement).appendChild(host || node);
+  }
+  function detach(node) {
+    const host = shadowHosts.get(node);
+    if (host) { shadowHosts.delete(node); host.remove(); }
+    node.remove();
+  }
+
   // ---- UI helpers ------------------------------------------------------------------
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   // A tap, not a scroll: the touch must start and end on this node and move
@@ -245,10 +297,10 @@
     const page = el('div', 'kg-pause-page');
     root.appendChild(page);
     document.documentElement.classList.add('kg-checkin-open');
-    (document.body || document.documentElement).appendChild(root);
+    attach(root, 'screen');
     // The overlay is opaque, so the page can be shown behind it now.
     unveil();
-    const close = () => { themeColor(null); root.remove(); document.documentElement.classList.remove('kg-checkin-open'); };
+    const close = () => { themeColor(null); detach(root); document.documentElement.classList.remove('kg-checkin-open'); };
     return { root, page, close };
   }
 
@@ -450,6 +502,7 @@
     // doesn't re-pause every page.
     if (Date.now() - Number(data.fgPauseLast || 0) < 10 * 60 * 1000) { unveil(); return; }
     data.fgPauseLog = Array.isArray(data.fgPauseLog) ? data.fgPauseLog : [];
+    await loadStyles();
     const lastOut = [...data.fgPauseLog].reverse().find((e) => e.outcome === 'continued' && !e.within && !e.reviewed && Date.now() - e.t < 48 * 3600 * 1000);
     whenBody(() => {
       try {
