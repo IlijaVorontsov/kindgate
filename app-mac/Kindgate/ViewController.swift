@@ -138,6 +138,9 @@ final class SetupModel: ObservableObject {
     @Published var state: ExtensionState = .checking
     @Published var reported = ReportedStatus()
     @Published var settingsError = false
+    /// Safari's own error for the last failed call, shown under the note so a
+    /// report can name it. Domain and code only: no user data is in it.
+    @Published var settingsErrorDetail = ""
     @Published var showLicences = false
     private var timer: Timer?
 
@@ -168,7 +171,10 @@ final class SetupModel: ObservableObject {
 
     func openSafariSettings() {
         SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionBundleIdentifier) { [weak self] error in
-            DispatchQueue.main.async { self?.settingsError = error != nil }
+            DispatchQueue.main.async {
+                self?.settingsError = error != nil
+                if let e = error as NSError? { self?.settingsErrorDetail = "\(e.domain) \(e.code)" } else { self?.settingsErrorDetail = "" }
+            }
         }
     }
 }
@@ -276,6 +282,7 @@ struct SetupView: View {
                         .buttonStyle(PrimaryButton())
                     if model.settingsError {
                         note("Safari did not open its settings. Open Safari, then Settings › Extensions, and pick Kindgate.")
+                        if !model.settingsErrorDetail.isEmpty { note("Safari’s answer: \(model.settingsErrorDetail)") }
                     }
                     note("The first row is Safari’s own answer. The others are reported by the extension and update while this window is open.")
                 }

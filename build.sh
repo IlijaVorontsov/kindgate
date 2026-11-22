@@ -695,18 +695,36 @@ if [ "$MODE" = mac ]; then
   [ -n "$APP" ] || { echo "Kindgate.app not found under $OUT/DerivedData"; exit 5; }
   step "Check the built app"
   check_bundle "$APP" && check_mac_bundle "$APP" || exit 9
+  # Xcode registers every Mac app it builds with Launch Services, extension
+  # included, so each build folder used to add one more "Kindgate" to Safari's
+  # Extensions list. Only the installed copy may stay registered.
+  LSREG=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+  forget_copy() {   # $1 is a Kindgate.app that must not be known to Safari
+    local ex; ex=$(find "$1/Contents/PlugIns" -maxdepth 1 -name "*.appex" 2>/dev/null | head -1)
+    [ -n "$ex" ] && pluginkit -r "$ex" 2>/dev/null
+    "$LSREG" -u "$1" >/dev/null 2>&1
+  }
   if [ "$INSTALL" = 1 ]; then
     step "Install to ~/Applications"
     mkdir -p "$HOME/Applications"
+    osascript -e 'tell application id "app.kindgate" to quit' >/dev/null 2>&1
     rm -rf "$HOME/Applications/Kindgate.app"
     cp -R "$APP" "$HOME/Applications/" || exit 5
+    forget_copy "$APP"; rm -rf "$APP"      # one copy on disk, the installed one
+    "$LSREG" -f "$HOME/Applications/Kindgate.app" >/dev/null 2>&1
     # Opening the app once registers its extension with Safari.
     open "$HOME/Applications/Kindgate.app"
+  else
+    forget_copy "$APP"
   fi
+  step "Kindgate extensions known to Safari"
+  COPIES=$(pluginkit -m -A -D -v -p com.apple.Safari.web-extension 2>/dev/null | grep -c "app.kindgate.Extension")
+  pluginkit -m -A -D -v -p com.apple.Safari.web-extension 2>/dev/null | grep "app.kindgate.Extension" | sed 's/^ *//'
+  [ "$COPIES" -le 1 ] || echo "WARNING: $COPIES copies are registered; Safari will list each. Remove the others with: pluginkit -r <path to the .appex>"
 
   echo
   echo "== DONE =="
-  [ "$INSTALL" = 1 ] || { echo "Built, not installed: $APP"; echo "Opening that app once registers its extension with Safari."; }
+  [ "$INSTALL" = 1 ] || { echo "Built, not installed and not registered: $APP"; echo "Opening that app registers its extension with Safari."; }
   if [ "$ADHOC" = 1 ]; then
     echo "This build is signed to run locally, without a certificate. Safari ignores such an"
     echo "extension until you allow unsigned extensions:"
