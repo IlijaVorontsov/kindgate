@@ -297,6 +297,7 @@
     <div class="cat-body">
       <label class="row"><input type="checkbox" id="f_mediaKeys" data-feature="mediaKeys"><span><strong>Media keys on any video</strong><br><span class="muted">For a keyboard. Ignored while you type, with Command, Control, Option or Shift held, and on pages without a visible video.</span></span></label>
       <label class="row" style="margin-top:10px"><input type="checkbox" id="f_speedCarry" data-feature="speedCarry"><span><strong>Carry speed changes from the player over to all videos</strong><br><span class="muted">A speed you pick in a video’s own menu becomes the speed for every video, in every tab, as the keys do. Off: it holds for that video, and the next one starts at your usual speed. Stays on this device.</span></span></label>
+      <div class="mk-row mk-speed" style="margin-top:12px"><span><strong>Speed for every video</strong><br><span class="muted" id="mkRate">…</span></span><span class="mk-speed-btns"><button type="button" id="mkSlower" aria-label="Slower">−</button><button type="button" id="mkNormal">1×</button><button type="button" id="mkFaster" aria-label="Faster">+</button></span></div>
       <p class="muted" style="margin:12px 0 4px">Click an action, then press the key you want. Esc cancels; Delete leaves the action without a key. Keys go by position: the defaults are shown as on a QWERTY keyboard (on Colemak they are Q W F A R S); a key you set shows the letter it types.</p>
       <div id="mkList" class="mk-list"></div>
       <div class="field"><label for="mkStep">Speed step</label>

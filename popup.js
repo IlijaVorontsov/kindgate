@@ -663,6 +663,42 @@
   });
   mkRender();
 
+  // ---- The global video speed: see it and change it without a keyboard ----
+  // Same value, steps and range as the media keys (media-keys.js picks the
+  // change up from storage and starts every video at it); handy on iPhone.
+  const mkRate = $('mkRate');
+  let speedNow = null, speedPrev = null, speedSeq = 0;
+  const fmtSpeed = (r) => `${Number(r.toFixed(2))}×`;
+  const speedClamp = (r) => Math.min(16, Math.max(0.1, r));
+  const speedStep = (r) => speedClamp(Number((Math.round(r / mk.step) * mk.step).toFixed(2)));
+  const speedShow = () => {
+    mkRate.textContent = speedNow == null ? 'Not set: videos play at the site’s own speed' : `Now ${fmtSpeed(speedNow)}`;
+  };
+  const speedSet = (r) => {
+    speedNow = r;
+    speedShow();
+    api.set({ fgMediaRate: r, fgMediaPrevRate: speedPrev, fgMediaRateFrom: `popup:${Date.now()}:${++speedSeq}` });
+  };
+  $('mkSlower').addEventListener('click', () => speedSet(speedStep((speedNow || 1) - mk.step)));
+  $('mkFaster').addEventListener('click', () => speedSet(speedStep((speedNow || 1) + mk.step)));
+  // 1×, and from 1× back to the speed before, like Q.
+  $('mkNormal').addEventListener('click', () => {
+    const cur = speedNow || 1;
+    if (Math.abs(cur - 1) >= 0.005) { speedPrev = cur; speedSet(1); }
+    else if (speedPrev && Math.abs(speedPrev - 1) >= 0.005) speedSet(speedPrev);
+    else speedSet(1);
+  });
+  api.get(['fgMediaRate', 'fgMediaPrevRate']).then((d) => {
+    speedNow = d && Number(d.fgMediaRate) ? speedClamp(Number(d.fgMediaRate)) : null;
+    speedPrev = d && Number(d.fgMediaPrevRate) ? Number(d.fgMediaPrevRate) : null;
+    speedShow();
+  });
+  const events = (typeof browser !== 'undefined' ? browser : chrome).storage.onChanged;
+  if (events) events.addListener((ch) => {
+    if (ch.fgMediaRate) { speedNow = Number(ch.fgMediaRate.newValue) ? speedClamp(Number(ch.fgMediaRate.newValue)) : null; speedShow(); }
+    if (ch.fgMediaPrevRate) speedPrev = Number(ch.fgMediaPrevRate.newValue) || null;
+  });
+
   // ---- Feature toggles (YouTube + Instagram)
   const igEvery = $('igEvery');
   api.get(['fgFeatures']).then((d) => { igEvery.value = String(((d && d.fgFeatures) || {}).igCheckpointEvery || 15); });
