@@ -39,7 +39,9 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             ok = record(dict)
         }
         if !ok {
-            os_log(.default, "Kindgate: ignored native message %@", String(describing: message))
+            // The fact only. A message that was not understood is not written
+            // to the system log, where other tools on the device can read it.
+            os_log(.default, "Kindgate: ignored a native message")
         }
 
         let response = NSExtensionItem()
