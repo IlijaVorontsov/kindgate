@@ -477,8 +477,9 @@ upsell.js          Blocks the App Store banner and "open in app" nags
 popup.html/js/css  Settings and the cue summary behind the extension icon
 background.js      Status heartbeat: tells the container app the extension is on
 
-app/               The container app: setup checklist, Swift, overlaid on the
-                   project the converter generates
+app/               The container app: setup checklist, Swift, entitlements and
+                   the two privacy manifests (PrivacyInfo.xcprivacy), overlaid
+                   on the project the converter generates
 build.sh           Convert, sign and install onto a paired iPhone or this Mac (--mac),
                    stage for Add Temporary Extension (--stage), or archive for TestFlight
 scripts/           changelog.py (release notes) and app-icon.sh (the app icon build.sh installs)

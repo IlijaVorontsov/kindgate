@@ -126,7 +126,8 @@ if [ "$MODE" != mac ]; then
 # The container app in app/ is UIKit; the Mac build keeps the converter's own app.
 step "Overlay app/ onto the generated project"
 # Replaces the converter's ViewController.swift, Main.storyboard and
-# SafariWebExtensionHandler.swift, and adds the two entitlements files.
+# SafariWebExtensionHandler.swift, and adds the two entitlements files and the
+# two privacy manifests.
 rsync -a "$SRC/app/" "$PROJDIR/" || exit 1
 find "$SRC/app" -type f | sed "s|$SRC/app/|  |"
 
@@ -157,6 +158,103 @@ print("added CODE_SIGN_ENTITLEMENTS to %d build configurations" % n)
 PYEOF
 grep -c 'CODE_SIGN_ENTITLEMENTS' "$PBX"
 grep -q "$APP_GROUP" "$PROJDIR/Kindgate/Kindgate.entitlements" || { echo "entitlements missing $APP_GROUP"; exit 1; }
+
+step "Privacy manifests"
+# App Store Connect refuses an iOS upload whose code uses a required-reason API
+# (here UserDefaults on the App Group) without a PrivacyInfo.xcprivacy in the
+# bundle that holds that code, so the app and the extension each carry one:
+# https://developer.apple.com/documentation/bundleresources/privacy-manifest-files
+# The overlay only puts the files on disk. Unlike the entitlements they are
+# resources, so each has to be in its target's Copy Bundle Resources phase.
+# The project is read as JSON to find the phase and to check the result; the
+# edit itself is text, so Xcode's own file format is kept.
+python3 - "$PBX" <<'PYEOF' || exit 1
+import hashlib, json, re, subprocess, sys
+pbx = sys.argv[1]
+NAME = "PrivacyInfo.xcprivacy"
+TARGETS = ["Kindgate", "Kindgate Extension"]     # target name = its folder in app/
+
+def objects():
+    out = subprocess.check_output(["plutil", "-convert", "json", "-o", "-", pbx])
+    return json.loads(out)["objects"]
+
+def state(objs, target):
+    """'bundled', or the id of the target's resources phase, or None."""
+    t = next((o for o in objs.values()
+              if o.get("isa") == "PBXNativeTarget" and o.get("name") == target), None)
+    if t is None:
+        return None
+    # A synchronized folder builds whatever is inside it, no reference needed.
+    for gid in t.get("fileSystemSynchronizedGroups", []):
+        if objs.get(gid, {}).get("path") == target:
+            return "bundled"
+    for pid in t.get("buildPhases", []):
+        phase = objs.get(pid, {})
+        if phase.get("isa") != "PBXResourcesBuildPhase":
+            continue
+        for bid in phase.get("files", []):
+            ref = objs.get(objs.get(bid, {}).get("fileRef"), {})
+            if (ref.get("path") or "").endswith(NAME):
+                return "bundled"
+        return pid
+    return None
+
+def insert_after(src, start, marker, line):
+    """Adds line after the first marker found at or after start."""
+    at = src.find(marker, start)
+    if at < 0:
+        sys.exit("project.pbxproj: no '%s' where one was expected" % marker.strip())
+    at += len(marker)
+    return src[:at] + line + src[at:]
+
+def definition(src, oid):
+    m = re.search(r"^\t\t%s (?:/\* .*? \*/ )?= \{" % oid, src, re.M)
+    if not m:
+        sys.exit("project.pbxproj: object %s not found" % oid)
+    return m.start()
+
+objs = objects()
+src = open(pbx).read()
+changed = False
+for target in TARGETS:
+    st = state(objs, target)
+    if st is None:
+        sys.exit("No resources phase found for target '%s'; add %s to it in Xcode." % (target, NAME))
+    if st == "bundled":
+        print("%s: already in the target" % target)
+        continue
+    digest = hashlib.md5(("kindgate privacy manifest " + target).encode()).hexdigest().upper()
+    ref_id, build_id = digest[:24], digest[8:32]
+    # Path from the project root, so it is right whichever group shows it.
+    group = next((k for k, o in objs.items()
+                  if o.get("isa") == "PBXGroup" and o.get("path") == target), None)
+    if group is None:
+        root = next(o for o in objs.values() if o.get("isa") == "PBXProject")
+        group = root["mainGroup"]
+    src = insert_after(src, 0, "/* Begin PBXBuildFile section */\n",
+        "\t\t%s /* %s in Resources */ = {isa = PBXBuildFile; fileRef = %s /* %s */; };\n"
+        % (build_id, NAME, ref_id, NAME))
+    src = insert_after(src, 0, "/* Begin PBXFileReference section */\n",
+        "\t\t%s /* %s */ = {isa = PBXFileReference; lastKnownFileType = text.xml; "
+        "name = %s; path = \"%s/%s\"; sourceTree = SOURCE_ROOT; };\n"
+        % (ref_id, NAME, NAME, target, NAME))
+    src = insert_after(src, definition(src, group), "children = (\n",
+        "\t\t\t\t%s /* %s */,\n" % (ref_id, NAME))
+    src = insert_after(src, definition(src, st), "files = (\n",
+        "\t\t\t\t%s /* %s in Resources */,\n" % (build_id, NAME))
+    changed = True
+    print("%s: added to Copy Bundle Resources" % target)
+
+if changed:
+    open(pbx, "w").write(src)
+    objs = objects()          # also proves the file still parses
+    for target in TARGETS:
+        if state(objs, target) != "bundled":
+            sys.exit("%s: %s is still not in the target after the edit" % (target, NAME))
+PYEOF
+for t in "Kindgate" "Kindgate Extension"; do
+  plutil -lint "$PROJDIR/$t/PrivacyInfo.xcprivacy" || exit 1
+done
 
 step "App Info.plist: URL schemes the checklist may query"
 # canOpenURL(youtube://) / canOpenURL(instagram://) tells the app whether the
@@ -327,6 +425,15 @@ if [ "${PIPESTATUS[0]}" != 0 ]; then
   fi
   exit 4
 fi
+
+step "Check the archive"
+# What has to be inside the bundles for App Store Connect to accept the upload.
+# Checked on the built product, because a file can be in the project and still
+# not be copied.
+ARCHIVED_APP="$ARCHIVE/Products/Applications/Kindgate.app"
+[ -f "$ARCHIVED_APP/PrivacyInfo.xcprivacy" ] || { echo "No privacy manifest in the app bundle — see the Privacy manifests step."; exit 9; }
+[ -n "$(find "$ARCHIVED_APP/PlugIns" -path '*.appex/PrivacyInfo.xcprivacy' 2>/dev/null)" ] || { echo "No privacy manifest in the extension bundle — see the Privacy manifests step."; exit 9; }
+echo "Privacy manifest: app and extension"
 
 step "Export"
 EXPORT_DIR="$OUT/build/export-$VERSION-$BUILD"

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest for the Safari extension. Keep it true to
+  SafariWebExtensionHandler.swift.
+
+  The extension's only native required-reason API is UserDefaults(suiteName:)
+  on the App Group, to store the status the container app shows. Reason 1C8F.1
+  is Apple's code for user defaults shared inside one App Group. No tracking,
+  no collected data: neither the handler nor the scripts make network requests.
+
+  build.sh adds this file to the extension target's resources; a copy that is
+  only on disk is not bundled and does nothing.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
