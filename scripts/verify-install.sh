@@ -13,11 +13,15 @@
 # differs, is missing from the app, or is in the app but not in the source.
 # Exit 0: all files match. Exit 1: at least one line printed. Exit 2: could not check.
 #
-# STATUS: NOT YET RUN AGAINST A REAL STORE BUILD. No App Store or TestFlight build of
-# the Mac app exists yet. The script has only been tested against staged copies of the
-# extension laid out like an app bundle. Xcode or the App Store may add files to
-# Resources or rewrite some; nothing is treated as "expected to differ" until that has
-# been seen on a real build, so every difference is printed.
+# STATUS: run against a Mac app built locally by "build.sh --mac" (ad-hoc signed,
+# 2026-11-22): all files matched and nothing was extra. NOT YET RUN AGAINST A STORE
+# BUILD: no App Store or TestFlight build of the Mac app exists yet. The store may
+# add files to Resources or rewrite some; nothing is treated as "expected to differ"
+# until that has been seen on a real build, so every difference is printed.
+# The one file in Resources that does not come from the staged extension folder is
+# PrivacyInfo.xcprivacy, which the build adds from app/Kindgate Extension/. hashes.py
+# lists it, so it is compared like the rest. A tag from before that file was listed
+# shows it as EXTRA.
 #
 # What a clean result means: the scripts, styles, lists, fonts and images in this app
 # are byte for byte the ones in the source at that tag. It says nothing about the

@@ -12,7 +12,9 @@ so `shasum -a 256 -c` can read it too.
 Which files ship is not decided here. This script takes the STRIP and STAGE_EXCLUDES
 lines from build.sh (of the given ref, when --ref is used), lets bash evaluate them, and
 runs the same rsync with those excludes into a temporary folder, then hashes what
-arrived. Change the staging rule in build.sh and this list follows.
+arrived. Change the staging rule in build.sh and this list follows. The extension's
+privacy manifest is added to the list as well: build.sh copies it into the extension
+from app/Kindgate Extension/, so it is in every built extension next to the staged files.
 
 Stdlib only; needs rsync and, for --ref, git: both are already needed to build.
 """
@@ -53,9 +55,17 @@ def stage_excludes(src):
     return args
 
 
+# The one file the build adds to the extension's resources from outside the
+# staged folder: its privacy manifest. Same file for the iPhone and the Mac.
+ADDED_BY_BUILD = {"PrivacyInfo.xcprivacy": "app/Kindgate Extension/PrivacyInfo.xcprivacy"}
+
+
 def stage(src, dest):
-    """Same call as build.sh's "Stage the extension" step."""
+    """Same call as build.sh's "Stage the extension" step, plus ADDED_BY_BUILD."""
     subprocess.run(["rsync", "-a", "--delete", *stage_excludes(src), f"{src}/", f"{dest}/"], check=True)
+    for name, origin in ADDED_BY_BUILD.items():
+        if (src / origin).is_file():      # older tags have no privacy manifest
+            (dest / name).write_bytes((src / origin).read_bytes())
 
 
 def hash_tree(folder):
