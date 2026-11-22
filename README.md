@@ -175,6 +175,9 @@ account, no server and no analytics.
 - The pause section can be locked with a PIN, hashed with PBKDF2 and salted per
   install. It keeps the section out of casual view on a shared phone. It is a
   curtain, not a lock: the log behind it is ordinary extension storage.
+- The video speed is one number in the same storage, shared by your tabs on
+  this device, whether you set it with the keys or (with the option on) in a
+  player. It is not synced to your other devices.
 - The one thing that leaves the phone does so only when you press send. The
   optional "talk it through with Claude" button composes a short message about
   the moment, copies it to the clipboard and opens claude.ai for you to paste.
@@ -374,6 +377,16 @@ for that video, and the next video starts at your speed again. Only while a
 video is loading, when sites reset the speed on their own, is a change with no
 tap or key of yours behind it set back; a site that keeps forcing its own speed
 is left alone on that video after a few tries.
+
+**Carry speed changes from the player over to all videos** (in the popup under
+Media keys, off by default) makes a speed you pick in any player's own menu
+the global speed, as if you had used the keys. This works on the iPhone too,
+where there are no keys. Only your own changes count: one that follows a tap,
+click or key of yours, or that you make in Safari's own fullscreen player.
+Changes the site makes (a new video loading, an ad, a live stream going back
+to 1×) are ignored, nothing is taken over during an ad, and the NSDR recording
+stays at 1× without changing your speed. Other open tabs pick the new speed up
+the next time they are shown; the most recent change wins.
 
 A short readout over the video shows the new speed or the jump. Keys are left
 alone while you type in a field, when Command, Control, Option or Shift is held, and on
