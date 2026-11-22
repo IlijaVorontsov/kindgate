@@ -229,6 +229,10 @@ something specific. The card closes on that single tap, and a toast then shows
 your pattern for the week with a **Leave instead** button before fading by
 itself.
 
+The card can be switched off at the top of Check-in & cues in the popup. It is
+on by default. Off stops only this daytime card: the morning, after-work and
+night windows have their own switches, and the log and its summary stay.
+
 Tapping the extension's icon in Safari, from the "aA" menu in the address bar,
 opens the full breakdown by feeling, site, hour and weekday, and the export and
 clear controls.

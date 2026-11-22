@@ -118,6 +118,11 @@
   api.get(['fgBlockUpsell']).then((d) => { blockupsell.checked = !(d && d.fgBlockUpsell === false); });
   blockupsell.addEventListener('change', () => api.set({ fgBlockUpsell: blockupsell.checked }));
 
+  // Daytime check-in card: on unless switched off, like the pause.
+  const checkinOn = $('checkinOn');
+  api.get(['fgCheckinOn']).then((d) => { checkinOn.checked = !(d && d.fgCheckinOn === false); });
+  checkinOn.addEventListener('change', () => api.set({ fgCheckinOn: checkinOn.checked }));
+
   const hidethumbs = $('hidethumbs');
   api.get(['fgHideThumbs']).then((d) => { hidethumbs.checked = !(d && d.fgHideThumbs === false); });
   hidethumbs.addEventListener('change', () => api.set({ fgHideThumbs: hidethumbs.checked }));
