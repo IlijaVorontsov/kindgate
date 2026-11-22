@@ -670,6 +670,9 @@ if [ "$MODE" = simulator ]; then
 fi
 
 if [ "$MODE" = mac ]; then
+  # Registering this Mac with the team changes the developer account, so it
+  # is asked for by name: KINDGATE_REGISTER_DEVICE=1, once per Mac.
+  [ "$KINDGATE_REGISTER_DEVICE" = 1 ] && [ "$ADHOC" = 0 ] && PROVISIONING+=(-allowProvisioningDeviceRegistration)
   step "Build for this Mac"
   xcodebuild -project "$PROJ" -scheme Kindgate -configuration Debug \
     -destination "platform=macOS" -derivedDataPath "$OUT/DerivedData" \
