@@ -170,8 +170,10 @@ installs that last a year.
 
 ## Privacy
 
-Everything stays on the phone, in the extension's own storage. There is no
-account, no server and no analytics.
+Everything stays on the device. There is no account, no server and no
+analytics. Your logs and settings are in the extension's own storage; the few
+things kept elsewhere on the device are listed under
+[Outside the extension's storage](#outside-the-extensions-storage) below.
 
 - The cue log records the time, the feeling and which of the two sites it was.
   It can never become a browsing history, because it only ever names those two.
@@ -195,6 +197,61 @@ account, no server and no analytics.
 - Links that Kindgate opens for you (claude.ai, the NSDR recording, your own
   "instead" links) are opened without a referrer, so the site you land on is
   not told which site you came from.
+
+### Outside the extension's storage
+
+A few small values are kept in the websites' own storage in Safari, because a
+script that has to decide something before the page draws cannot wait for the
+extension's storage. The site they are stored on can read them, so they also
+show that site that Kindgate is installed. None holds a log entry, a feeling,
+a plan or an address.
+
+| Where | Key | What it holds | Goes away |
+| --- | --- | --- | --- |
+| YouTube and Instagram, `localStorage` | `fg:features` | A copy of the on/off switches for the YouTube and Instagram measures | When you clear that site's data |
+| YouTube, `localStorage` | `yt-player-quality` | Your default quality, in YouTube's own setting | When you clear that site's data |
+| YouTube, `sessionStorage` | `kg-hops` | Times of the last redirects, to stop a redirect loop | When the tab closes |
+| Instagram, `sessionStorage` | `kg-ig-hops`, `fg:igStart` | The same loop guard, and when this visit started | When the tab closes |
+| Any site, `sessionStorage` | `fg:nightPass` | That you tapped "continue anyway" at night in this tab | When the tab closes |
+
+**These stay after you remove Kindgate.** Removing the extension deletes its
+own storage, not what sits in a website's storage. To clear the two
+`localStorage` entries: Settings › Apps › Safari › Advanced › Website Data,
+search for youtube.com and instagram.com and delete them (on a Mac: Safari ›
+Settings › Privacy › Manage Website Data). That also signs you out of those
+sites. The `sessionStorage` entries are gone as soon as the tab is closed.
+
+The Kindgate app keeps the setup checklist's status in an App Group it shares
+with the extension (see [The container app](#the-container-app)). Deleting the
+app removes it.
+
+### What runs on every website
+
+Four scripts are allowed on all sites, because night mode, the pause and the
+warm screen have to work wherever you are. Nothing but the code limits them,
+so this is what each one does there:
+
+- `checkin.js` checks the time against your windows and, at night, draws the
+  night page. It reads the page's host name to apply your allow-list and
+  pauses videos under the page; it stores `youtube`, `instagram` or `other`,
+  never the host.
+- `pause.js` compares the page's host name with your pause list and the
+  bundled lists, and draws the pause screen on a match. The host name is not
+  stored.
+- `warm.js` draws the amber overlay, and tells the Kindgate app that the
+  extension ran, with the host reduced to `youtube.com`, `instagram.com` or
+  `other`.
+- `media-keys.js` runs in every frame and listens for key presses, because
+  bare letter keys cannot be registered any other way. It looks each press up
+  in a map of six keys, ignores everything typed into a field or held with a
+  modifier, and stores and sends no keys. The only thing it saves is the
+  playback speed you chose.
+
+The bundled fonts, the pause lists and two stylesheets are readable by web
+pages (`web_accessible_resources`), because Kindgate's own screens load them
+from inside a page. A page that knew the extension's address could load one
+and learn that Kindgate is installed. The storage keys above are an easier
+tell.
 
 ## Features in detail
 
@@ -486,7 +543,9 @@ on Subscriptions, hide Shorts, hide recommendations, hide comments, no autoplay,
 the Subscriptions/You bar, the PiP button and rotate to fullscreen. For
 Instagram: open on Following, block Reels and Explore, hide suggested, hide
 sponsored. The site scripts read the map from a localStorage mirror, so
-document-start redirects are right from the second visit on.
+document-start redirects are right from the second visit on. The mirror is in
+the sites' own storage, where the site can read it; see
+[Outside the extension's storage](#outside-the-extensions-storage).
 
 ## Project layout
 
