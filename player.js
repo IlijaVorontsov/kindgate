@@ -37,7 +37,7 @@
     nsdrPrompt = document.createElement('button');
     nsdrPrompt.type = 'button';
     nsdrPrompt.className = 'kg-nsdr-start';
-    nsdrPrompt.textContent = 'Tap to start the NSDR';
+    nsdrPrompt.textContent = 'Start the NSDR';
     const go = () => {
       try { v.muted = false; v.playbackRate = 1; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); } catch { /* ignore */ }
       if (nsdrPrompt) { nsdrPrompt.remove(); nsdrPrompt = null; }

@@ -419,7 +419,7 @@
     });
     page.appendChild(cont);
 
-    page.appendChild(el('p', 'kg-pause-foot', 'Stays on this phone. Logged: the time, the feeling, what you chose. Never the site.'));
+    page.appendChild(el('p', 'kg-pause-foot', 'Stays on this device. Logged: the time, the feeling, what you chose. Never the site.'));
   }
 
   // The decision needs no DOM; only drawing does.

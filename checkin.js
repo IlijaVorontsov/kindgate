@@ -804,7 +804,7 @@
 
     const stats = st.week || st.streak
       ? `Wins this week: ${st.week}` + (st.streak >= 2 ? ` · ${st.streak}-day streak` : '')
-      : 'First win of the week is one tap away.';
+      : 'First win of the week is one step away.';
     card.appendChild(el('p', 'kg-stats', stats));
   }
 
