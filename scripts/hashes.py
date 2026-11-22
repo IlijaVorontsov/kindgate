@@ -9,9 +9,10 @@
 One line per file, "<sha256>  <path>", sorted by path: the format of `shasum -a 256`,
 so `shasum -a 256 -c` can read it too.
 
-Which files ship is not decided here. This script reads the STRIP line from build.sh
-(of the given ref, when --ref is used) and runs the same rsync with the same excludes
-into a temporary folder, then hashes what arrived. Change STRIP and this list follows.
+Which files ship is not decided here. This script takes the STRIP and STAGE_EXCLUDES
+lines from build.sh (of the given ref, when --ref is used), lets bash evaluate them, and
+runs the same rsync with those excludes into a temporary folder, then hashes what
+arrived. Change the staging rule in build.sh and this list follows.
 
 Stdlib only; needs rsync and, for --ref, git: both are already needed to build.
 """
@@ -32,20 +33,29 @@ def die(msg):
     sys.exit(2)
 
 
-def strip_list(src):
-    """The STRIP entries of the build.sh in src."""
-    m = re.search(r'^STRIP="([^"]*)"', (src / "build.sh").read_text(), re.M)
-    if not m:
-        die(f"no STRIP=\"...\" line in {src / 'build.sh'}")
-    return m.group(1).split()
+def stage_excludes(src):
+    """The rsync exclude arguments, computed by build.sh's own two lines.
+
+    The STRIP= and STAGE_EXCLUDES= lines are cut out of the build.sh in src and
+    run by bash, so a change to either (a new entry, another pattern form) is
+    followed here without an edit. This runs those two lines of the repository's
+    build script, and nothing else of it.
+    """
+    lines = [ln for ln in (src / "build.sh").read_text().splitlines()
+             if re.match(r"(STRIP|STAGE_EXCLUDES)=", ln)]
+    if len(lines) != 2:
+        die(f"expected one STRIP= and one STAGE_EXCLUDES= line in {src / 'build.sh'}, found {len(lines)}")
+    out = subprocess.run(["bash", "-c", "\n".join(lines) + '\nprintf "%s\\0" "${STAGE_EXCLUDES[@]}"'],
+                         capture_output=True, text=True, check=True).stdout
+    args = out.split("\0")[:-1]
+    if not args:
+        die("build.sh's STAGE_EXCLUDES came out empty")
+    return args
 
 
 def stage(src, dest):
     """Same call as build.sh's "Stage the extension" step."""
-    cmd = ["rsync", "-a", "--delete", "--exclude", ".*"]
-    for name in strip_list(src):
-        cmd += ["--exclude", name]
-    subprocess.run(cmd + [f"{src}/", f"{dest}/"], check=True)
+    subprocess.run(["rsync", "-a", "--delete", *stage_excludes(src), f"{src}/", f"{dest}/"], check=True)
 
 
 def hash_tree(folder):
