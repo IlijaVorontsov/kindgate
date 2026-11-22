@@ -20,6 +20,9 @@ html.kg-yt-shorts ytd-rich-item-renderer:has(a[href^="/shorts/"]),
 html.kg-yt-shorts ytd-video-renderer:has(a[href^="/shorts/"]),
 html.kg-yt-shorts ytd-grid-video-renderer:has(a[href^="/shorts/"]),
 html.kg-yt-shorts ytd-compact-video-renderer:has(a[href^="/shorts/"]),
+html.kg-yt-shorts ytd-rich-item-renderer:has([overlay-style="SHORTS"]),
+html.kg-yt-shorts ytd-video-renderer:has([overlay-style="SHORTS"]),
+html.kg-yt-shorts yt-lockup-view-model:has(a[href^="/shorts/"]),
 html.kg-yt-shorts ytm-video-with-context-renderer:has(a[href^="/shorts/"]),
 html.kg-yt-shorts ytm-compact-video-renderer:has(a[href^="/shorts/"]),
 html.kg-yt-shorts ytm-rich-item-renderer:has(a[href^="/shorts/"]),
@@ -32,6 +35,12 @@ html.kg-yt-shorts ytm-pivot-bar-item-renderer:has(.pivot-bar-item-tab.shorts),
 html.kg-yt-shorts yt-tab-shape[tab-title="Shorts"],
 html.kg-yt-shorts tp-yt-paper-tab:has(a[href$="/shorts"]),
 html.kg-yt-shorts yt-chip-cloud-chip-renderer:has([title="Shorts"]),
+
+/* ---- Desktop menu: "Explore" and "More from YouTube" (kg-yt-guide) ---- */
+html.kg-yt-guide ytd-guide-section-renderer:has(a[href*="music.youtube.com"]),
+html.kg-yt-guide ytd-guide-section-renderer:has(a[href*="youtubekids.com"]),
+html.kg-yt-guide ytd-guide-section-renderer:has(a[href="/gaming"]),
+html.kg-yt-guide ytd-guide-section-renderer:has(a[href^="/feed/storefront"]),
 
 /* ---- Home / Explore / Trending entry points (the feeds themselves are
         redirected to /feed/subscriptions by youtube.js) ---- */

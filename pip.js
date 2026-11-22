@@ -151,12 +151,15 @@
     return s;
   }
 
+  const DESKTOP = !/^m\./.test(location.hostname) && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+
   function ensureButton() {
     const v = video();
     // webkitSupportsPresentationMode() reports false while YouTube's
     // `disablepictureinpicture` attribute is set, so unblock first.
     unblock(v);
-    const want = F.ytPip && isWatch() && !!v && supported(v);
+    // The Mac has Safari's own Picture in Picture in the video's controls.
+    const want = F.ytPip && !DESKTOP && isWatch() && !!v && supported(v);
     if (!want) { if (btn) { btn.remove(); btn = null; } return; }
 
     // Always a direct child of <body>: parking it next to the player meant it

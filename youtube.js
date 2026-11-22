@@ -19,7 +19,7 @@
   // (redirects) are right from the second visit on; storage refreshes it.
   const FEATURE_DEFAULTS = {
     ytHome: true, ytShorts: true, ytRelated: true, ytComments: true, ytAutoplay: true,
-    ytTabBar: true, ytPip: true, ytRotate: true,
+    ytTabBar: true, ytPip: true, ytRotate: true, ytGuide: true,
     igFollowing: true, igReels: true, igSuggested: true, igAds: true,
   };
   let F = (() => { try { return Object.assign({}, FEATURE_DEFAULTS, JSON.parse(localStorage.getItem('fg:features') || '{}')); } catch { return Object.assign({}, FEATURE_DEFAULTS); } })();
@@ -37,7 +37,7 @@
     }
   }
 
-  const YT_CLASSES = { ytHome: 'kg-yt-home', ytShorts: 'kg-yt-shorts', ytRelated: 'kg-yt-related', ytComments: 'kg-yt-comments', ytAutoplay: 'kg-yt-autoplay', ytTabBar: 'kg-yt-tabbar' };
+  const YT_CLASSES = { ytHome: 'kg-yt-home', ytShorts: 'kg-yt-shorts', ytRelated: 'kg-yt-related', ytComments: 'kg-yt-comments', ytAutoplay: 'kg-yt-autoplay', ytTabBar: 'kg-yt-tabbar', ytGuide: 'kg-yt-guide' };
   function applyFeatureClasses() {
     const root = document.documentElement; if (!root) return;
     for (const k of Object.keys(YT_CLASSES)) root.classList.toggle(YT_CLASSES[k], !!F[k]);
@@ -162,6 +162,12 @@
 
   function hide(el) { if (el && !el.hasAttribute('data-kindgate-hidden')) el.setAttribute('data-kindgate-hidden', ''); }
 
+  // m.youtube.com is the phone site; www.youtube.com with a mouse is a Mac.
+  // The bottom bar below exists because the phone site drops its own while a
+  // video is open; the desktop site keeps its menu, so it gets no extra bar.
+  const MOBILE_SITE = /^m\./.test(location.hostname);
+  const DESKTOP = !MOBILE_SITE && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+
   // ---- Our own bottom bar on watch pages ------------------------------------
   // YouTube removes its tab bar from the DOM entirely while a video is open,
   // so there is nothing to un-hide — we supply the two entries worth keeping.
@@ -192,7 +198,7 @@
   let tabbar = null;
   function ensureTabBar() {
     const body = document.body;
-    if (!onWatch() || !F.ytTabBar) { if (tabbar) { tabbar.remove(); tabbar = null; } return; }
+    if (!onWatch() || !F.ytTabBar || DESKTOP) { if (tabbar) { tabbar.remove(); tabbar = null; } return; }
     if (!body) return;
     if (tabbar && tabbar.isConnected && tabbar.parentElement === body) return;
     if (tabbar) tabbar.remove();
@@ -227,6 +233,13 @@
   const TILES = 'ytm-video-with-context-renderer, ytm-media-item, ytm-compact-video-renderer,' +
     'ytm-rich-item-renderer, ytd-compact-video-renderer, ytd-video-renderer,' +
     'ytd-rich-item-renderer, yt-lockup-view-model';
+
+  // Links to other videos that are not recommendations: the player's own end
+  // screen and up-next card (hidden, so zero height: climbing from them used
+  // to reach the player itself and blank it), the description, a playlist.
+  const NOT_RELATED = '.html5-video-player, #movie_player, ytd-player, #player, ytd-watch-metadata, #description,' +
+    'ytd-text-inline-expander, ytd-structured-description-content-renderer, ytm-structured-description-content-renderer,' +
+    'ytm-slim-video-metadata-section-renderer, ytd-playlist-panel-renderer, ytm-playlist-panel-renderer, ytd-engagement-panel-section-list-renderer';
 
   // Walk up from a label to the smallest box that actually looks like a block.
   function climb(el, minHeight, stopAt) {
@@ -314,9 +327,11 @@
       a.setAttribute('data-kg-seen', '');
       const m = (a.getAttribute('href') || '').match(/[?&]v=([A-Za-z0-9_-]{6,})/);
       if (!m || m[1] === id) continue;
-      if (a.closest('[data-kindgate-hidden]')) continue;
-      const tile = a.closest(TILES) || climb(a, 80);
-      if (tile) hide(tile);
+      if (a.closest('[data-kindgate-hidden]') || a.closest(NOT_RELATED)) continue;
+      // Climbing to an unknown wrapper is for the phone site's markup only; on
+      // the desktop site the known tiles and the CSS cover the sidebar.
+      const tile = a.closest(TILES) || (MOBILE_SITE ? climb(a, 80) : null);
+      if (tile && !tile.querySelector('video')) hide(tile);
     }
 
     // (b) The comments teaser only — never the carousel around it, which also
@@ -351,9 +366,21 @@
     if (F.ytAutoplay && e.target && e.target.tagName === 'VIDEO') { try { e.target.pause(); } catch { /* ignore */ } }
   }, true);
 
+  // Desktop menu sections that are only more of YouTube's catalogue (EN + DE).
+  const GUIDE_TITLES = ['explore', 'entdecken', 'more from youtube', 'mehr von youtube', 'weitere youtube-angebote'];
+  function sweepGuide() {
+    if (!F.ytGuide) return;
+    for (const sec of document.querySelectorAll('ytd-guide-section-renderer:not([data-kindgate-hidden])')) {
+      const t = sec.querySelector('#guide-section-title');
+      const title = (t ? t.textContent : '').trim().toLowerCase();
+      if (GUIDE_TITLES.includes(title)) hide(sec);
+    }
+  }
+
   function sweep() {
     sweepFeed();
     sweepWatch();
+    sweepGuide();
     ensureTabBar();
 
     // Bottom tab bar (mobile web): Home / Shorts / Explore
