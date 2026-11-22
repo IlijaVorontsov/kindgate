@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Kindgate",
   "version": "6.3",
-  "description": "YouTube without Shorts or the Home feed; Instagram limited to the accounts you follow; plus a one-tap cue check-in on every open (Safari); plus a warm, dimmed screen at night.",
+  "description": "YouTube without Shorts or the Home feed; Instagram limited to the accounts you follow; plus a one-tap cue check-in on every open (Safari); plus a warm, dimmed screen at night; plus speed and seek keys for any video on a keyboard.",
   "icons": {
     "48": "images/icon-48.png",
     "96": "images/icon-96.png",
@@ -130,6 +130,20 @@
       ],
       "run_at": "document_start",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "css": [
+        "media-keys.css"
+      ],
+      "js": [
+        "media-keys.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "permissions": [

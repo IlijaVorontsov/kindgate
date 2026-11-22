@@ -280,11 +280,25 @@
       <label class="row"><input type="checkbox" id="unmute"><span><strong>Unmute automatically</strong><br><span class="muted">Takes effect once playback has started.</span></span></label>
       <label class="row" style="margin-top:10px"><input type="checkbox" id="blockupsell"><span><strong>Block “open in app” prompts</strong><br><span class="muted">Removes the App Store banner and the sites’ own “use the app” nags.</span></span></label>
       <label class="row" style="margin-top:10px"><input type="checkbox" id="hidethumbs"><span><strong>Hide thumbnails in feeds</strong><br><span class="muted">Turn off if the Subscriptions list stalls while scrolling.</span></span></label>
-      <div class="field"><label for="speed">Default speed</label>
-        <select id="speed"><option value="1">Normal</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></div>
       <div class="field"><label for="quality">Default quality</label>
         <select id="quality"><option value="auto">Auto</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option><option value="240">240p</option><option value="144">144p</option></select></div>
       <p class="muted">Quality is best effort: YouTube’s player API is out of an extension’s reach on iOS, so this sets the preference YouTube remembers rather than forcing each video.</p>
+    </div>
+  </details>
+
+  <!-- =============================== Media keys ============================== -->
+  <details class="cat" id="cat-mediakeys">
+    <summary><span class="cat-title">Media keys</span><span class="cat-sub">Speed and seek on any video</span></summary>
+    <div class="cat-body">
+      <label class="row"><input type="checkbox" id="f_mediaKeys" data-feature="mediaKeys"><span><strong>Media keys on any video</strong><br><span class="muted">For a keyboard. Ignored while you type, with Command, Control, Option or Shift held, and on pages without a visible video.</span></span></label>
+      <p class="muted" style="margin:12px 0 4px">Click an action, then press the key you want. Esc cancels; Delete leaves the action without a key. Keys go by position: the defaults are shown as on a QWERTY keyboard (on Colemak they are Q W F A R S); a key you set shows the letter it types.</p>
+      <div id="mkList" class="mk-list"></div>
+      <div class="field"><label for="mkStep">Speed step</label>
+        <select id="mkStep"><option value="0.05">0.05×</option><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option></select></div>
+      <div class="field"><label for="mkSeek">Jump</label>
+        <select id="mkSeek"><option value="5">5 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
+      <div class="btnrow"><button type="button" id="mkReset">Reset keys</button></div>
+      <p class="muted" id="mkNote" style="margin-top:8px" hidden></p>
     </div>
   </details>
 

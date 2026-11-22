@@ -107,10 +107,9 @@
   }
 
   // Playback preferences
-  const unmute = $('unmute'), speed = $('speed'), quality = $('quality');
-  api.get(['fgUnmute', 'fgSpeed', 'fgQuality']).then((d) => {
+  const unmute = $('unmute'), quality = $('quality');
+  api.get(['fgUnmute', 'fgQuality']).then((d) => {
     unmute.checked = !!(d && d.fgUnmute);
-    speed.value = String((d && d.fgSpeed) || 1);
     quality.value = (d && d.fgQuality) || 'auto';
   });
   unmute.addEventListener('change', () => api.set({ fgUnmute: unmute.checked }));
@@ -122,7 +121,6 @@
   const hidethumbs = $('hidethumbs');
   api.get(['fgHideThumbs']).then((d) => { hidethumbs.checked = !(d && d.fgHideThumbs === false); });
   hidethumbs.addEventListener('change', () => api.set({ fgHideThumbs: hidethumbs.checked }));
-  speed.addEventListener('change', () => api.set({ fgSpeed: Number(speed.value) }));
   quality.addEventListener('change', () => api.set({ fgQuality: quality.value }));
 
   // Evening plan: windows, plans, wins
@@ -512,6 +510,85 @@
     api.set({ fgMorningSetup: o });
   });
 
+  // ---- Media keys: rebindable keys, step and jump --------------------------
+  // Stored as { map: { action: { code, label } | null }, step, seek }. `code`
+  // is the key's position (event.code), so it survives a layout switch;
+  // `label` is what that key typed when it was set, which is what to show.
+  const MK_ACTIONS = [
+    ['reset', '1× / back to your speed'], ['slower', 'Slower'], ['faster', 'Faster'],
+    ['fullscreen', 'Fullscreen on / off'], ['back', 'Jump back'], ['forward', 'Jump forward'],
+  ];
+  const MK_DEFAULT = {
+    map: {
+      reset: { code: 'KeyQ', label: 'Q' }, slower: { code: 'KeyW', label: 'W' }, faster: { code: 'KeyE', label: 'E' },
+      fullscreen: { code: 'KeyA', label: 'A' }, back: { code: 'KeyS', label: 'S' }, forward: { code: 'KeyD', label: 'D' },
+    },
+    step: 0.1, seek: 10,
+  };
+  const KEY_NAMES = { Space: 'Space', ArrowLeft: '\u2190', ArrowRight: '\u2192', ArrowUp: '\u2191', ArrowDown: '\u2193',
+    Enter: 'Return', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\',
+    Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/' };
+  const keyLabel = (e) => (e.key && e.key.length === 1 && e.key !== ' ') ? e.key.toUpperCase() : (KEY_NAMES[e.code] || e.code.replace(/^(Key|Digit|Numpad)/, ''));
+  const mkList = $('mkList'), mkStep = $('mkStep'), mkSeek = $('mkSeek'), mkNote = $('mkNote');
+  let mk = JSON.parse(JSON.stringify(MK_DEFAULT));
+  let waiting = null;   // the action whose key is being captured
+
+  const mkSave = () => api.set({ fgMediaKeys: mk });
+  function mkNoteSay(text) { mkNote.textContent = text; mkNote.hidden = !text; }
+  function mkRender() {
+    mkList.replaceChildren();
+    for (const [action, name] of MK_ACTIONS) {
+      const row = document.createElement('div'); row.className = 'mk-row';
+      const label = document.createElement('span');
+      label.textContent = action === 'slower' || action === 'faster' ? `${name} (${mk.step}\u00D7)` : action === 'back' || action === 'forward' ? `${name} (${mk.seek} s)` : name;
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'mk-key'; btn.dataset.action = action;
+      const b = mk.map[action];
+      if (waiting === action) { btn.textContent = 'Press a key\u2026'; btn.classList.add('mk-wait'); }
+      else if (b) btn.textContent = b.label;
+      else { btn.textContent = 'none'; btn.classList.add('mk-none'); }
+      btn.addEventListener('click', () => { waiting = waiting === action ? null : action; mkNoteSay(''); mkRender(); });
+      row.append(label, btn);
+      mkList.appendChild(row);
+    }
+    mkStep.value = String(mk.step);
+    mkSeek.value = String(mk.seek);
+  }
+  // Clicking or typing anywhere else cancels a rebind, so the next key meant
+  // for another field is never taken as the media key.
+  const mkCancel = () => { if (waiting) { waiting = null; mkRender(); } };
+  document.addEventListener('pointerdown', (e) => { if (waiting && !(e.target.closest && e.target.closest('.mk-key'))) mkCancel(); }, true);
+  document.addEventListener('focusin', (e) => { if (waiting && e.target.matches && e.target.matches('input, select, textarea, [contenteditable]')) mkCancel(); }, true);
+  document.addEventListener('keydown', (e) => {
+    if (!waiting) return;
+    if (e.target.matches && e.target.matches('input, select, textarea, [contenteditable]')) { mkCancel(); return; }
+    if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn'].includes(e.key)) return;   // wait for the real key
+    e.preventDefault(); e.stopPropagation();
+    const action = waiting;
+    waiting = null;
+    if (e.key === 'Escape') { mkRender(); return; }
+    if (e.key === 'Backspace' || e.key === 'Delete') { mk.map[action] = null; mkSave(); mkRender(); return; }
+    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) { mkNoteSay('Use a key on its own; keys held with Command, Control, Option or Shift are left to the page.'); mkRender(); return; }
+    if (e.code === 'Tab') { mkNoteSay('Tab stays with the page, for moving between controls.'); mkRender(); return; }
+    const bound = { code: e.code, label: keyLabel(e) };
+    for (const [other] of MK_ACTIONS) {
+      if (other !== action && mk.map[other] && mk.map[other].code === bound.code) {
+        mk.map[other] = null;
+        mkNoteSay(`${bound.label} was on \u201C${MK_ACTIONS.find((x) => x[0] === other)[1]}\u201D; that action has no key now.`);
+      }
+    }
+    mk.map[action] = bound;
+    mkSave(); mkRender();
+  }, true);
+  mkStep.addEventListener('change', () => { mk.step = Number(mkStep.value) || 0.1; mkSave(); mkRender(); });
+  mkSeek.addEventListener('change', () => { mk.seek = Number(mkSeek.value) || 10; mkSave(); mkRender(); });
+  $('mkReset').addEventListener('click', () => { mk = JSON.parse(JSON.stringify(MK_DEFAULT)); waiting = null; mkNoteSay(''); mkSave(); mkRender(); });
+  api.get(['fgMediaKeys']).then((d) => {
+    const s = d && d.fgMediaKeys;
+    if (s) mk = { map: Object.assign({}, MK_DEFAULT.map, s.map || {}), step: Number(s.step) || MK_DEFAULT.step, seek: Number(s.seek) || MK_DEFAULT.seek };
+    mkRender();
+  });
+  mkRender();
+
   // ---- Feature toggles (YouTube + Instagram)
   const igEvery = $('igEvery');
   api.get(['fgFeatures']).then((d) => { igEvery.value = String(((d && d.fgFeatures) || {}).igCheckpointEvery || 15); });
@@ -523,7 +600,7 @@
     });
   });
 
-  const FEATURE_DEFAULTS = { ytHome: true, ytShorts: true, ytRelated: true, ytComments: true, ytAutoplay: true, ytTabBar: true, ytPip: true, ytRotate: true, igFollowing: true, igReels: true, igSuggested: true, igAds: true, igCheckpoint: true };
+  const FEATURE_DEFAULTS = { ytHome: true, ytShorts: true, ytRelated: true, ytComments: true, ytAutoplay: true, ytTabBar: true, ytPip: true, ytRotate: true, ytGuide: true, igFollowing: true, igReels: true, igSuggested: true, igAds: true, igCheckpoint: true, mediaKeys: true };
   const featureBoxes = [...document.querySelectorAll('input[data-feature]')];
   api.get(['fgFeatures']).then((d) => {
     const f = Object.assign({}, FEATURE_DEFAULTS, (d && d.fgFeatures) || {});

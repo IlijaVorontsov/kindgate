@@ -1,5 +1,6 @@
 // Kindgate — playback preferences for YouTube
-// Auto-unmute, a default playback speed, and a best-effort default quality.
+// Auto-unmute and a best-effort default quality. Speed belongs to the media
+// keys (media-keys.js), which keep one global speed for every video.
 // Set them in the extension popup.
 
 (() => {
@@ -9,7 +10,7 @@
               : (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) ? chrome.storage.local
               : null;
 
-  let cfg = { unmute: false, speed: 1, quality: 'auto' };
+  let cfg = { unmute: false, quality: 'auto' };
   let qualityWritten = null;
 
   // ---- The NSDR recording: always 1x, and start it without being asked. ----
@@ -77,9 +78,9 @@
     }
 
     const nsdr = isNsdr();
-    const want = nsdr ? 1 : (Number(cfg.speed) || 1);          // the NSDR is always 1x
-    if (v.playbackRate !== want) {
-      try { v.playbackRate = want; } catch { /* ignore */ }
+    // The NSDR recording always plays at 1x (media-keys.js leaves it alone).
+    if (nsdr && v.playbackRate !== 1) {
+      try { v.playbackRate = 1; } catch { /* ignore */ }
     }
     if (nsdr) nsdrAutoplay(v);
   }
@@ -106,12 +107,11 @@
   function load() {
     if (!store) return;
     try {
-      const r = store.get(['fgUnmute', 'fgSpeed', 'fgQuality']);
+      const r = store.get(['fgUnmute', 'fgQuality']);
       if (r && typeof r.then === 'function') {
         r.then((d) => {
           cfg = {
             unmute: !!(d && d.fgUnmute),
-            speed: (d && Number(d.fgSpeed)) || 1,
             quality: (d && d.fgQuality) || 'auto',
           };
           qualityWritten = null;
@@ -125,7 +125,7 @@
   load();
   if (typeof browser !== 'undefined' && browser.storage && browser.storage.onChanged) {
     browser.storage.onChanged.addListener((ch) => {
-      if (ch.fgUnmute || ch.fgSpeed || ch.fgQuality) load();
+      if (ch.fgUnmute || ch.fgQuality) load();
     });
   }
 

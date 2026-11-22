@@ -61,6 +61,13 @@ button:active { background: var(--kg-line); }
 }
 
 h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
+
+/* Media keys: one row per action, the key as a button you click to rebind */
+.mk-list { display: flex; flex-direction: column; gap: 6px; }
+.mk-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+.mk-key { flex: none; min-width: 64px; font-family: var(--kg-font-mono); font-weight: 600; text-align: center; }
+.mk-key.mk-wait { outline: 2px solid var(--kg-honey); font-family: var(--kg-font-body); font-weight: 500; }
+.mk-key.mk-none { color: var(--kg-ink-muted); }
 .win { margin-top: 10px; }
 .times { display: flex; align-items: center; gap: 8px; margin: 6px 0 0 30px; }
 input[type="time"], input[type="text"], input[type="url"] {

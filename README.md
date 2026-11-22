@@ -48,6 +48,7 @@ way through.
 | **Morning sequence** | For the first half hour after waking, a feed shows your own morning steps instead. Nothing to decide. |
 | **Warm screen at night** | After your set hour every page eases toward candlelight. Contrast survives, layouts never break. |
 | **Pause screen** | On sites you list, friction rather than a wall: breathing, a question, your pre-set alternative, and a countdown on "continue anyway". |
+| **Media keys on a Mac** | On any video: Q toggles 1× and your speed, W / E slower / faster by 0.1×, A fullscreen, S / D back / forward 10 s (QWERTY positions; Q W F A R S on Colemak). Every key can be changed, and the speed carries over to every tab. |
 | **Hands off to Shortcuts** | Any button can run a shortcut of yours. Timers, reminders, whatever you already trust. |
 
 > [!IMPORTANT]
@@ -264,7 +265,7 @@ a continue that unlocks after ten seconds.
 The wind-down audio button defaults to a 20-minute NSDR recording, offered again
 whenever you log "tired" by day. A 25-minute pass lets that one video through
 both the check-in and the night page. It always plays at 1x whatever your
-default speed, and starts by itself where iOS allows; where it does not, one
+media-key speed, and starts by itself where iOS allows; where it does not, one
 large "Tap to start" button appears. Set your own link in the popup to replace
 it.
 
@@ -326,12 +327,47 @@ may refuse; a single **Tap for fullscreen** prompt then appears, and that tap is
 a gesture. Both the PiP button and rotation start the video first if it is
 paused or has not begun.
 
-Playback preferences in the popup cover **unmute automatically**, a **default
-speed** and a best-effort **default quality**. Speed and unmute are applied
-straight to the video element and are reliable. Quality only nudges the
+Playback preferences in the popup cover **unmute automatically** and a
+best-effort **default quality**. Speed is set only with the [media
+keys](#media-keys), one speed for every video. Unmute is applied
+straight to the video element and is reliable. Quality only nudges the
 preference YouTube persists, because the player API lives in the page's
 JavaScript world that a content script cannot reach, and YouTube's content
 security policy blocks injecting a script to get there.
+
+### Media keys
+
+With a hardware keyboard (a Mac, or an iPad with a keyboard) every HTML5 video
+answers to six bare keys. They are matched by position on the keyboard, not by
+the letter they type, so the same physical keys work on any layout:
+
+| QWERTY | Colemak | Action |
+| --- | --- | --- |
+| Q | Q | Speed to 1.0×; press again to go back to the speed you had |
+| W / E | W / F | Speed down / up by 0.1× (0.1× to 16×) |
+| A | A | Fullscreen on / off |
+| S / D | R / S | Back / forward 10 seconds |
+
+Every key, the speed step (0.05× to 0.5×) and the jump (5 to 30 s) can be
+changed in the popup under **Media keys**: click an action and press the key you
+want. Esc cancels, Delete leaves the action without a key, and a key already in
+use moves to the new action.
+
+The speed is global, like the Global Speed extension: the one you pick applies
+to every video in every tab and window, to videos that load later, and after
+Safari restarts. Q switches between 1× and that speed. Until you first press a speed key, videos
+play at whatever the site chooses. A site that resets the speed (on the next
+video, or from its own speed menu) is overruled; one that keeps forcing its own
+speed is left alone on that video after a few tries.
+
+A short readout over the video shows the new speed or the jump. Keys are left
+alone while you type in a field, when Command, Control, Option or Shift is held, and on
+pages without a video. Fullscreen
+uses the site's own button when there is one (YouTube, Twitch, Vimeo and the
+common player libraries), so its controls and subtitles stay. On Netflix, S and
+D are left to Netflix's own arrow keys, because its player breaks when the
+position is set from outside. Videos inside an embedded player answer once you
+have clicked into that player. Turn it off under Media keys in the popup.
 
 ### "Open in app" prompts
 
@@ -425,14 +461,16 @@ checkin.js/.css    The cue check-in card, both sites
 pause.js/.css      The pause screen for sites you list, all sites
 warm.js/.css       The warm night overlay, all sites
 pip.js/.css        Picture in Picture button and rotate-to-fullscreen
-player.js          Auto-unmute, default playback speed and quality
+player.js          Auto-unmute and default quality; keeps the NSDR at 1x
+media-keys.js/.css Rebindable speed, seek and fullscreen keys; one global speed
 upsell.js          Blocks the App Store banner and "open in app" nags
 popup.html/js/css  Settings and the cue summary behind the extension icon
 background.js      Status heartbeat: tells the container app the extension is on
 
 app/               The container app: setup checklist, Swift, overlaid on the
                    project the converter generates
-build.sh           Convert, sign and install onto a paired iPhone, or archive for TestFlight
+build.sh           Convert, sign and install onto a paired iPhone or this Mac (--mac),
+                   stage for Add Temporary Extension (--stage), or archive for TestFlight
 scripts/           changelog.py (release notes) and app-icon.sh (the app icon build.sh installs)
 ```
 

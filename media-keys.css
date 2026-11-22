@@ -1,0 +1,10 @@
+/* Kindgate — media keys: the brief speed / seek readout over the video */
+.kg-mk-hud {
+  position: fixed; z-index: 2147483647; pointer-events: none;
+  padding: 6px 10px; border-radius: 8px;
+  background: rgba(0, 0, 0, 0.72); color: rgba(255, 255, 255, 0.96);
+  font: 600 15px/1.2 var(--kg-font-body, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-variant-numeric: tabular-nums;
+  opacity: 0; transition: opacity 0.18s ease-out;
+}
+.kg-mk-hud.kg-mk-on { opacity: 1; transition: none; }
