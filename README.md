@@ -371,6 +371,10 @@ to every video in every tab and window, to videos that load later, and after
 Safari restarts. Q switches between 1× and that speed. Until you first press a speed key, videos
 play at whatever the site chooses.
 
+Without a keyboard (on the iPhone, say), the popup's **Speed for every video**
+row under Media keys shows the current speed and changes it with −, 1× and +,
+in the same steps as the keys; 1× switches back to the speed before, like Q.
+
 It is a starting speed, not a lock. Each video starts at it, and so does every
 video when you change it. A speed you then pick in the player's own menu holds
 for that video, and the next video starts at your speed again. Only while a

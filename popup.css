@@ -77,6 +77,9 @@ h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
 .mk-key { flex: none; min-width: 64px; font-family: var(--kg-font-mono); font-weight: 600; text-align: center; }
 .mk-key.mk-wait { outline: 2px solid var(--kg-honey); font-family: var(--kg-font-body); font-weight: 500; }
 .mk-key.mk-none { color: var(--kg-ink-muted); }
+.mk-speed { margin: 4px 0 12px; }
+.mk-speed-btns { display: flex; gap: 6px; flex: none; }
+.mk-speed-btns button { min-width: 44px; font-weight: 600; }
 .win { margin-top: 10px; }
 .times { display: flex; align-items: center; gap: 8px; margin: 6px 0 0 30px; }
 input[type="time"], input[type="text"], input[type="url"] {

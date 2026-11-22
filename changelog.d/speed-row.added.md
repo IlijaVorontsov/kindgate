@@ -1,0 +1,1 @@
+- The popup shows the speed every video starts at, with −, 1× and + to change it without a keyboard (on the iPhone too).
