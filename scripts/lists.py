@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Snapshot the bundled pause lists from StevenBlack/hosts (MIT).
 
-    python3 scripts/lists.py            # refresh lists/*.txt
+    python3 scripts/lists.py            # refresh lists/*.txt (downloads)
+    python3 scripts/lists.py --refilter # apply EXCLUDE to the snapshots already
+                                        # in lists/, without the network
 
 The extension makes no network calls, so the lists are frozen at release time
 and refreshed by re-running this script on a branch. Each hosts file is reduced
@@ -11,6 +13,7 @@ the pause matcher already treats a listed domain as covering its subdomains.
 """
 import datetime
 import pathlib
+import sys
 import urllib.request
 
 SRC = 'https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/{}-only/hosts'
@@ -20,8 +23,8 @@ NOISE = {'localhost', 'localhost.localdomain', 'local', 'broadcasthost', 'ip6-lo
          'ip6-allhosts', '0.0.0.0'}
 # Messaging is not a feed. The social list is for the scroll, not for talking
 # to people, so the chat apps StevenBlack bundles with it are left out.
-EXCLUDE = {'social': {'whatsapp.com', 'whatsapp.net', 'messenger.com', 'telegram.org', 'telegram.me',
-                      't.me', 'signal.org'}}
+EXCLUDE = {'social': {'whatsapp.com', 'whatsapp.net', 'messenger.com', 'm.me', 'messages-facebook.com',
+                      'telegram.org', 'telegram.me', 't.me', 'signal.org', 'wechat.com'}}
 OUT = pathlib.Path(__file__).resolve().parent.parent / 'lists'
 
 
@@ -48,7 +51,28 @@ def domains(text, exclude=frozenset()):
     return sorted(h for h in seen if not covered(h))
 
 
+def refilter():
+    """Apply EXCLUDE to the bundled snapshots as they are. No download: the
+    snapshot date in the header stays, only the count is brought up to date."""
+    for name in LISTS:
+        path = OUT / f'{name}.txt'
+        exclude = EXCLUDE.get(name, frozenset())
+        header, kept = [], []
+        for line in path.read_text().splitlines():
+            if line.startswith('#'):
+                header.append(line)
+            elif line and not any(line == e or line.endswith('.' + e) for e in exclude):
+                kept.append(line)
+        header = [f'# {len(kept)} domains, one per line; a domain covers its subdomains.'
+                  if ' domains, one per line' in h else h for h in header]
+        path.write_text('\n'.join(header + kept) + '\n')
+        print(f'{name}: {len(kept)} domains')
+
+
 def main():
+    if '--refilter' in sys.argv[1:]:
+        refilter()
+        return
     OUT.mkdir(exist_ok=True)
     today = datetime.date.today().isoformat()
     for name, ext in LISTS.items():

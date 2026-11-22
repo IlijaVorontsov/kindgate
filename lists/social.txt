@@ -1,7 +1,7 @@
 # Kindgate pause list: social
 # Source: https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/social-only/hosts
 # StevenBlack/hosts, MIT licence (see lists/LICENSE). Snapshot 2026-09-21.
-# 583 domains, one per line; a domain covers its subdomains.
+# 580 domains, one per line; a domain covers its subdomains.
 abs.twimg.com
 abtest-sg-tiktok.byteoversea.com
 abtest-va-tiktok.byteoversea.com
@@ -310,7 +310,6 @@ facebook.se
 facebook.us
 fb.com
 fb.me
-fbcallback.wechat.com
 fbcdn-creative-a.akamaihd.net
 fbcdn-photos-a.akamaihd.net
 fbcdn-photos-e-a.akamaihd.net
@@ -385,14 +384,12 @@ linkedin.com.cdn.cloudflare.net
 live-video.net
 log-va.tiktokv.com.edgekey.net
 log.tiktokv.com.edgesuite.net
-m.me
 ma.twimg.com
 ma0.twimg.com
 ma1.twimg.com
 ma2.twimg.com
 ma3.twimg.com
 match.com
-messages-facebook.com
 mon-va.byteoversea.com
 mon-va.tiktokv.com.edgesuite.net
 mon.byteoversea.com
