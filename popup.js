@@ -386,6 +386,25 @@
     }
   });
 
+  // ---- The wins log and the pause log: copy and clear, like the cue log.
+  // The pause log's buttons sit inside the Pause section, so a PIN covers them.
+  function logControls(copyId, clearId, key, question, cleared) {
+    const copyBtn = $(copyId), label = copyBtn.textContent;
+    copyBtn.addEventListener('click', async () => {
+      const data = await api.get([key]);
+      copy(JSON.stringify(data[key] || [], null, 2), copyBtn, label);
+    });
+    $(clearId).addEventListener('click', async () => {
+      if (!confirm(question)) return;
+      await api.remove([key]);
+      cleared();
+    });
+  }
+  logControls('winsCopy', 'winsClear', 'fgWins', 'Delete the whole wins log?', () => {
+    $('wins').textContent = '0'; $('streak').textContent = ''; morningStatus();
+  });
+  logControls('pauseCopy', 'pauseClear', 'fgPauseLog', 'Delete the whole pause log?', () => insights([]));
+
   // ---- "Talk it through with Claude" (opt-in)
   const claudeOn = $('claudeOn');
   api.get(['fgClaudeOn']).then((d) => { claudeOn.checked = !!(d && d.fgClaudeOn); });

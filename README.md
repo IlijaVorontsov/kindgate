@@ -177,7 +177,11 @@ account, no server and no analytics.
   It can never become a browsing history, because it only ever names those two.
 - The pause log records the time, the feeling, the outcome and whether it was
   within your goal. Never a URL, never a hostname.
-- Both can be copied out as JSON or cleared from the popup.
+- The wins log records the time, the plan you tapped, the window, and
+  `youtube`, `instagram` or `other`. Never a URL, never a hostname.
+- Each of the three logs can be copied out as JSON or cleared from the popup:
+  the cue log under Check-in & cues, the wins log under Evening plan, the pause
+  log under Pause › Patterns (behind the PIN, if one is set).
 - The pause section can be locked with a PIN, hashed with PBKDF2 and salted per
   install. It keeps the section out of casual view on a shared phone. It is a
   curtain, not a lock: the log behind it is ordinary extension storage.
