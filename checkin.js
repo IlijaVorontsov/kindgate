@@ -652,7 +652,9 @@
       onTap(sc, () => {
         // x-callback-url: if Shortcuts can't find the name, it sends us back
         // here with a marker instead of failing silently in another app.
-        const back = location.origin + location.pathname + location.search;
+        // The site's front page is enough to come back to; which page was
+        // open is not Shortcuts' business.
+        const back = location.origin + '/';
         const url = 'shortcuts://x-callback-url/run-shortcut?name=' + encodeURIComponent(shortcut) +
                     '&input=text&text=' + encodeURIComponent(payload()) +
                     '&x-error=' + encodeURIComponent(back + '#kg-sc-error');
