@@ -171,9 +171,22 @@
     node.addEventListener('touchend', run, { passive: false });
     node.addEventListener('click', run);
   }
+  // Leaving for another site must not tell that site where the user came
+  // from. A plain location.href navigation sends the Referer header, by
+  // default the origin of the current page, which on a pause screen is the
+  // paused site. A link marked noreferrer sends none. App links (shortcuts://,
+  // music://) carry no referrer and go the old way.
+  function navigate(url) {
+    if (!/^https?:/i.test(url)) { location.href = url; return; }
+    const a = document.createElement('a');
+    a.href = url;
+    a.rel = 'noreferrer noopener';
+    a.referrerPolicy = 'no-referrer';
+    a.click();
+  }
   function leave(url) {
     const to = safeUrl(url);
-    if (to) { location.href = to; return; }
+    if (to) { navigate(to); return; }
     try { window.close(); } catch { /* ignore */ }
     location.replace('about:blank');
   }
@@ -481,7 +494,7 @@
   async function talkToClaude(ctx) {
     const text = claudePrompt(ctx);
     try { await navigator.clipboard.writeText(text); } catch { /* paste will just be manual */ }
-    location.href = 'https://claude.ai/new';
+    navigate('https://claude.ai/new');
   }
   function claudeButton(cls, ctx) {
     const b = el('button', cls, 'Talk it through with Claude');
@@ -496,7 +509,7 @@
   const NSDR_URL = 'https://www.youtube.com/watch?v=hEypv90GzDE&autoplay=1';
   async function openNsdr(url) {
     await save({ fgNsdrPassUntil: Date.now() + 25 * 60 * 1000 });
-    location.href = safeUrl(url) || NSDR_URL;
+    navigate(safeUrl(url) || NSDR_URL);
   }
 
   // ---- morning ------------------------------------------------------------------
