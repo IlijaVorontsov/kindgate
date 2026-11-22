@@ -90,15 +90,32 @@ no cryptography of its own and makes no network connections; the pause PIN is
 hashed by Safari's built-in WebCrypto. `--release` checks both in the archive
 before exporting.
 
+`bash build.sh --simulator` builds the iPhone app for the iOS Simulator, with
+no device, certificate or Apple ID, and checks the same things in the built
+app. It is the quick way to see that everything compiles.
+
 **On a Mac**, `bash build.sh --mac` builds a macOS-only project in a
 `Kindgate-Xcode-mac` folder beside this one, signs it with your Apple
 Development certificate, copies `Kindgate.app` to `~/Applications` and opens it
 once so Safari picks up the extension. Then tick Kindgate in Safari → Settings →
-Extensions and allow it on every website. Without Xcode, `bash build.sh --stage`
+Extensions and allow it on every website. With no certificate on the Mac the
+build is signed to run locally instead. Safari treats that as an unsigned
+extension: it stays hidden until you tick *Allow unsigned extensions* under
+Safari → Settings → Developer, and Safari clears that box every time it quits.
+Add `--no-install` to build without copying or opening the app. Without Xcode, `bash build.sh --stage`
 only stages the extension folder: load it from Safari → Settings → Developer →
 *Add Temporary Extension…* (turn on *Allow unsigned extensions* first). Safari
 drops a temporary extension when it quits or after 24 hours, so this is for
 trying changes, not daily use.
+
+The script needs Xcode 26 or later. Xcode 27.2 writes new projects in its
+JSON format (`project.xcproj`); the script converts the project back to
+`project.pbxproj` with `xcodebuild -convert-project pbxproj`, because that is
+the format it edits and both Xcode versions build it. The builds run on the
+current system and the two before it (iOS 18, macOS 15, or later);
+`KINDGATE_IOS_MIN` and `KINDGATE_MAC_MIN` change that. `KINDGATE_OUT=<folder>`
+puts the staged extension, the project and the build products somewhere else,
+which keeps a trial build away from a folder Safari has loaded.
 
 Then open Kindgate on the phone. Its [setup checklist](#the-container-app)
 covers enabling the extension, allowing the sites and deleting the apps, and
@@ -112,7 +129,8 @@ each step turns green by itself once it is done.
 1. Copy this folder to your Mac. Install Xcode from the App Store and open it
    once so it installs its command-line tools.
 
-2. Convert the web extension into an iOS app project:
+2. Convert the web extension into an iOS app project (from Xcode 26 the tool
+   is called `safari-web-extension-packager`; the options are the same):
 
    ```bash
    xcrun safari-web-extension-converter ~/Downloads/Kindgate \
