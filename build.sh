@@ -5,7 +5,13 @@
 #   bash build.sh                 Debug build, install over USB (the default)
 #   bash build.sh --release       Release archive, exported as a signed .ipa
 #   bash build.sh --upload        ...and upload it to App Store Connect
-#   bash build.sh --mac           macOS build, installed to ~/Applications
+#   bash build.sh --mac           macOS build, installed to ~/Applications.
+#                                 Signed to run locally unless DEVELOPMENT_TEAM
+#                                 is set: a team build asks Apple for a profile
+#   bash build.sh --mac --release Release archive for macOS, exported as a
+#                                 signed .pkg for the Mac App Store. Stops at
+#                                 once, before anything is built, if this Mac
+#                                 cannot sign for the store.
 #   bash build.sh --simulator     iOS Simulator build, unsigned: compiles the
 #                                 app and checks what is inside it, installs nothing
 #   bash build.sh --stage         only stage the extension folder, for Safari's
@@ -14,6 +20,8 @@
 #                                 after 24 h)
 #   --no-install                  with --mac: build only, do not copy the app to
 #                                 ~/Applications or open it. Never opens Xcode.
+#   --adhoc                       with --mac: sign to run locally even when
+#                                 DEVELOPMENT_TEAM is set.
 #
 # KINDGATE_OUT=<folder> puts the staged extension, the Xcode project and the
 # build products there instead of ../Kindgate-Xcode (../Kindgate-Xcode-mac for
@@ -26,10 +34,12 @@
 # an App Store Connect API key. The runbook lives in the private ops repo:
 # https://github.com/IlijaVorontsov/kindgatex/blob/main/docs/testflight.md
 #
-# Layout: the repo root is the web extension. app/ holds the container app's
-# own files (Swift, storyboard, entitlements) and is overlaid onto the project
-# the converter generates, so the converter stays the source of truth for
-# project.pbxproj and app/ stays the source of truth for the app.
+# Layout: the repo root is the web extension. app/ holds the iPhone app's own
+# files (Swift, storyboard, entitlements) and app-mac/ the Mac app's. One of
+# them is overlaid onto the project the converter generates, so the converter
+# stays the source of truth for project.pbxproj and the two folders stay the
+# source of truth for the apps. The native message handler and the extension's
+# privacy manifest exist once, in app/, and the Mac build takes them from there.
 set -o pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG="$SRC/build.log"
@@ -40,31 +50,47 @@ APP_GROUP="group.$BUNDLE"
 # Keep in sync with CLAUDE.md when adding non-extension files to the root.
 # docs/ is ignored by git but listed anyway: an untracked local copy would
 # otherwise be rsynced straight into the signed .appex.
-STRIP="app docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md SECURITY.md CONTRIBUTING.md TRADEMARK.md AUDIT.md"
+STRIP="app app-mac docs site scripts changelog.d build.sh build.log README.md LICENSE CLAUDE.md CHANGELOG.md SECURITY.md CONTRIBUTING.md TRADEMARK.md AUDIT.md"
 # Anchored to the repo root ("/name"): a bare name matches at any depth, which
 # used to drop lists/LICENSE, the MIT notice that has to ship with the lists.
 STAGE_EXCLUDES=(--exclude '.*'); for s in $STRIP; do STAGE_EXCLUDES+=(--exclude "/$s"); done
 
 MODE=device
 INSTALL=1
+MAC=0
+FORCE_ADHOC=0
 for arg in "$@"; do
   case "$arg" in
     --release) MODE=release;;
     --upload)  MODE=upload;;
-    --mac)     MODE=mac;;
+    --mac)     MAC=1;;
     --stage)   MODE=stage;;
     --simulator) MODE=simulator;;
     --no-install) INSTALL=0;;
-    -h|--help) sed -n '2,28p' "$0"; exit 0;;
+    --adhoc)   FORCE_ADHOC=1;;
+    -h|--help) sed -n '2,36p' "$0"; exit 0;;
     *) echo "Unknown option: $arg (try --help)"; exit 1;;
   esac
 done
+
+# --mac alone is the Debug build for this Mac; with --release it is the Mac
+# App Store archive. IS_MAC is true for both.
+IS_MAC=0
+if [ "$MAC" = 1 ]; then
+  IS_MAC=1
+  case "$MODE" in
+    device)  MODE=mac;;
+    release) MODE=macrelease;;
+    *) echo "--mac goes alone or with --release. --mac with --$MODE is not written."; exit 1;;
+  esac
+fi
+[ "$FORCE_ADHOC" = 1 ] && [ "$MODE" != mac ] && { echo "--adhoc only goes with --mac (the Debug build for this Mac)."; exit 1; }
 
 # The Mac build is a separate macOS-only project next to the iOS one: the
 # converter lays a universal project out differently, which app/ is not
 # shaped for. Same bundle id, so the two can later become a universal purchase.
 OUT="$(dirname "$SRC")/Kindgate-Xcode"
-[ "$MODE" = mac ] && OUT="$(dirname "$SRC")/Kindgate-Xcode-mac"
+[ "$IS_MAC" = 1 ] && OUT="$(dirname "$SRC")/Kindgate-Xcode-mac"
 [ -n "$KINDGATE_OUT" ] && OUT="$KINDGATE_OUT"
 STAGE="$OUT/stage"                 # the extension alone, what the converter sees
 PROJDIR="$OUT/Kindgate"
@@ -92,6 +118,44 @@ step() { echo; echo "---- $* ----"; }
 if [ "$MODE" != stage ]; then
   step "Xcode"
   xcodebuild -version || { echo "Xcode not ready. Install Xcode, run 'sudo xcode-select -s /Applications/Xcode.app', open it once, then re-run."; exit 1; }
+fi
+
+if [ "$MODE" = macrelease ]; then
+  step "Mac App Store signing"
+  # Checked first, so the run stops here and not in the middle of an archive.
+  # A Mac App Store upload is an installer package: the app is signed with an
+  # Apple Distribution or Mac App Distribution certificate and the .pkg with a
+  # Mac Installer Distribution one (in the keychain the older two are named
+  # "3rd Party Mac Developer Application" and "... Installer").
+  # Xcode can make both itself when it has an App Store Connect API key.
+  # https://developer.apple.com/help/account/reference/certificate-types
+  MAS_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8}"
+  MAS_KEY=0
+  [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -f "$MAS_KEY_PATH" ] && MAS_KEY=1
+  MAS_APP=$(security find-identity -v -p codesigning 2>/dev/null | grep -c -E '"(Apple Distribution|3rd Party Mac Developer Application): ')
+  MAS_PKG=$(security find-identity -v 2>/dev/null | grep -c -E '"(3rd Party Mac Developer Installer|Mac Installer Distribution): ')
+  echo "App Store Connect API key: $([ "$MAS_KEY" = 1 ] && echo "$ASC_KEY_ID" || echo none)"
+  echo "Distribution certificates in the keychain: app $MAS_APP, installer $MAS_PKG"
+  if [ "$MAS_KEY" = 0 ] && { [ "$MAS_APP" = 0 ] || [ "$MAS_PKG" = 0 ]; }; then
+    echo
+    echo "Cannot build for the Mac App Store on this Mac: nothing to sign with. Nothing was built."
+    echo "It needs the paid Apple Developer Program team and one of:"
+    echo "  - an App Store Connect API key: set ASC_KEY_ID and ASC_ISSUER_ID (and ASC_KEY_PATH if"
+    echo "    the .p8 is not in ~/.appstoreconnect/private_keys/), plus DEVELOPMENT_TEAM=<team id>."
+    echo "    Xcode then creates the certificates and profiles itself; or"
+    echo "  - both certificates in the keychain: Apple Distribution (or Mac App Distribution) and"
+    echo "    Mac Installer Distribution"
+    echo "    (Xcode > Settings > Accounts > Manage Certificates)."
+    echo "For a build that runs on this Mac without any of that: bash build.sh --mac"
+    exit 2
+  fi
+  if [ "$MAS_APP" = 0 ] && [ -z "$DEVELOPMENT_TEAM" ]; then
+    echo
+    echo "An API key is set but no certificate names the team. Set DEVELOPMENT_TEAM=<team id>"
+    echo "(the paid team, not the personal one) and re-run. Nothing was built."
+    exit 2
+  fi
+  INSTALL=0      # a release run never opens Xcode or the app
 fi
 
 step "Stage the extension"
@@ -155,7 +219,7 @@ if [ ! -d "$PROJ" ]; then
   # Xcode 26 renamed the converter to safari-web-extension-packager.
   CONVERTER=safari-web-extension-packager
   xcrun --find "$CONVERTER" >/dev/null 2>&1 || CONVERTER=safari-web-extension-converter
-  PLATFORM_FLAG=--ios-only; [ "$MODE" = mac ] && PLATFORM_FLAG=--macos-only
+  PLATFORM_FLAG=--ios-only; [ "$IS_MAC" = 1 ] && PLATFORM_FLAG=--macos-only
   xcrun "$CONVERTER" "$STAGE" \
     --project-location "$OUT" --app-name Kindgate \
     --bundle-identifier "$BUNDLE" "$PLATFORM_FLAG" --swift --no-open --force --copy-resources || exit 1
@@ -169,14 +233,25 @@ to_pbxproj || exit 1
 [ -f "$XCPROJ" ] && { echo "Both project.xcproj and project.pbxproj are in $PROJ; delete $PROJDIR and re-run."; exit 1; }
 echo "project.pbxproj, $(sed -n 's/^[[:space:]]*objectVersion = \([0-9]*\);/object version \1/p' "$PBX")"
 
-if [ "$MODE" != mac ]; then
-# The container app in app/ is UIKit; the Mac build keeps the converter's own app.
-step "Overlay app/ onto the generated project"
-# Replaces the converter's ViewController.swift, Main.storyboard and
-# SafariWebExtensionHandler.swift, and adds the two entitlements files and the
-# two privacy manifests.
-rsync -a "$SRC/app/" "$PROJDIR/" || exit 1
-find "$SRC/app" -type f | sed "s|$SRC/app/|  |"
+# The iPhone app in app/ is UIKit, the Mac app in app-mac/ is AppKit and
+# SwiftUI; each build takes its own folder.
+APPSRC="$SRC/app"; [ "$IS_MAC" = 1 ] && APPSRC="$SRC/app-mac"
+step "Overlay $(basename "$APPSRC")/ onto the generated project"
+# Replaces the converter's ViewController.swift, Main.storyboard (and, on the
+# Mac, AppDelegate.swift) and SafariWebExtensionHandler.swift, and adds the two
+# entitlements files and the two privacy manifests.
+rsync -a "$APPSRC/" "$PROJDIR/" || exit 1
+find "$APPSRC" -type f | sed "s|$APPSRC/|  |"
+if [ "$IS_MAC" = 1 ]; then
+  # One handler and one extension privacy manifest for both platforms: the
+  # message format is the same, and one file is easier to read than two.
+  for f in SafariWebExtensionHandler.swift PrivacyInfo.xcprivacy; do
+    cp "$SRC/app/Kindgate Extension/$f" "$PROJDIR/Kindgate Extension/$f" || exit 1
+    echo "  Kindgate Extension/$f (from app/)"
+  done
+  grep -q 'os_log(.default, "Received message' "$PROJDIR/Kindgate Extension/SafariWebExtensionHandler.swift" && {
+    echo "The extension still has the converter's handler, which logs every message."; exit 1; }
+fi
 
 step "App Group entitlements"
 # Both targets need the same App Group so the extension can hand status to the
@@ -204,7 +279,9 @@ open(path, "w").write("".join(out))
 print("added CODE_SIGN_ENTITLEMENTS to %d build configurations" % n)
 PYEOF
 grep -c 'CODE_SIGN_ENTITLEMENTS' "$PBX"
-grep -q "$APP_GROUP" "$PROJDIR/Kindgate/Kindgate.entitlements" || { echo "entitlements missing $APP_GROUP"; exit 1; }
+for t in "Kindgate/Kindgate" "Kindgate Extension/Kindgate Extension"; do
+  grep -q "$APP_GROUP" "$PROJDIR/$t.entitlements" || { echo "$t.entitlements is missing $APP_GROUP"; exit 1; }
+done
 
 step "Privacy manifests"
 # App Store Connect refuses an iOS upload whose code uses a required-reason API
@@ -303,11 +380,13 @@ for t in "Kindgate" "Kindgate Extension"; do
   plutil -lint "$PROJDIR/$t/PrivacyInfo.xcprivacy" || exit 1
 done
 
+if [ "$IS_MAC" = 0 ]; then
 step "App Info.plist: URL schemes the checklist may query"
 # canOpenURL(youtube://) / canOpenURL(instagram://) tells the app whether the
 # native apps are still installed; iOS only answers for schemes listed here.
 plutil -replace LSApplicationQueriesSchemes -json '["youtube","instagram"]' "$PROJDIR/Kindgate/Info.plist" || exit 1
 plutil -extract LSApplicationQueriesSchemes json -o - "$PROJDIR/Kindgate/Info.plist"
+fi
 
 step "App Info.plist: export compliance"
 # Declares that Kindgate uses no encryption that needs export documentation,
@@ -321,6 +400,59 @@ step "App Info.plist: export compliance"
 plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PROJDIR/Kindgate/Info.plist" || exit 1
 plutil -extract ITSAppUsesNonExemptEncryption raw -o - "$PROJDIR/Kindgate/Info.plist"
 
+if [ "$IS_MAC" = 1 ]; then
+step "Mac app: sandbox, category, no placeholder files"
+# The Mac App Store takes sandboxed apps only, and every Mac app needs a
+# category: https://developer.apple.com/documentation/xcode/configuring-the-macos-app-sandbox
+# https://developer.apple.com/documentation/bundleresources/information-property-list/lsapplicationcategorytype
+plutil -replace LSApplicationCategoryType -string public.app-category.productivity "$PROJDIR/Kindgate/Info.plist" || exit 1
+plutil -extract LSApplicationCategoryType raw -o - "$PROJDIR/Kindgate/Info.plist"
+# The converter grants its own app outgoing network connections and read access
+# to files the user picks, as build settings that Xcode turns into entitlements.
+# Kindgate's app uses neither, so the two settings go and the entitlements
+# files in app-mac/ are the whole list. The sandbox itself and the hardened
+# runtime stay on.
+sed -i '' -e '/ENABLE_OUTGOING_NETWORK_CONNECTIONS = /d' -e '/ENABLE_USER_SELECTED_FILES = /d' "$PBX"
+for want in "ENABLE_APP_SANDBOX = YES" "ENABLE_HARDENED_RUNTIME = YES"; do
+  [ "$(grep -c "$want;" "$PBX")" = 4 ] || { echo "Expected '$want' in all four target configurations of $PBX."; exit 1; }
+done
+echo "App Sandbox and hardened runtime: on, both targets; no network or file entitlements"
+sed -i '' 's/INFOPLIST_KEY_NSHumanReadableCopyright = "";/INFOPLIST_KEY_NSHumanReadableCopyright = "Open source under the Mozilla Public License 2.0.";/' "$PBX"
+# The converter's app is a web view around Main.html, Script.js, Style.css and
+# Icon.png. app-mac/ replaces the code that loaded them; this takes the four
+# files out of the project and off the disk, so the app holds nothing that is
+# not in the repo.
+python3 - "$PBX" <<'PYEOF' || exit 1
+import json, re, subprocess, sys
+pbx = sys.argv[1]
+src = open(pbx).read()
+NAMES = r"(?:Main\.html|Script\.js|Style\.css|Icon\.png)"
+# One-line objects and list entries that name one of the four files.
+out = re.sub(r"^[^\n]*/\* %s(?: in Resources)? \*/(?:,| = \{[^\n]*\};)\n" % NAMES, "", src, flags=re.M)
+out = re.sub(r"^[^\n]*path = Base\.lproj/Main\.html;[^\n]*\n", "", out, flags=re.M)
+# The Main.html variant group is a block of its own.
+out = re.sub(r"^\t\t[0-9A-F]{24} /\* Main\.html \*/ = \{\n.*?^\t\t\};\n", "", out, flags=re.M | re.S)
+out = re.sub(r"^\t*[0-9A-F]{24} /\* Base \*/,\n(?=\t*\);\n\t*name = Main\.html;)", "", out, flags=re.M)
+if out == src:
+    print("placeholder files: already out of the project")
+else:
+    open(pbx, "w").write(out)
+    print("placeholder files: removed from the project")
+objs = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", pbx]))["objects"]
+left = [o.get("path") or o.get("name") for o in objs.values()
+        if re.fullmatch(NAMES, str(o.get("path") or o.get("name") or "").split("/")[-1])]
+if left:
+    sys.exit("project.pbxproj still names %s" % ", ".join(sorted(set(left))))
+ids = set(objs)
+for oid, o in objs.items():
+    for key in ("children", "files", "buildPhases"):
+        for ref in o.get(key, []):
+            if ref not in ids:
+                sys.exit("project.pbxproj: %s refers to a removed object %s" % (oid, ref))
+    if o.get("isa") == "PBXBuildFile" and o.get("fileRef") not in ids:
+        sys.exit("project.pbxproj: build file %s has no file" % oid)
+PYEOF
+rm -rf "$PROJDIR/Kindgate/Resources" "$PROJDIR/Kindgate/Assets.xcassets/LargeIcon.imageset"
 fi
 
 step "Normalise bundle identifiers"
@@ -344,11 +476,14 @@ sed -i '' \
   "$PBX"
 grep -o '[A-Z]*_DEPLOYMENT_TARGET = [^;]*' "$PBX" | sort | uniq -c
 
-if [ "$MODE" != mac ]; then   # app-icon.sh fills the iOS single-size icon set
 step "App icon"
-# The converter ships Apple's placeholder, which is also transparent and would
-# be rejected on upload. Replace it every build so it can never go stale.
-bash "$SRC/scripts/app-icon.sh" "$PROJDIR/Kindgate/Assets.xcassets/AppIcon.appiconset" || exit 6
+# The converter ships a placeholder: on iOS Apple's own, which is transparent
+# and would be rejected on upload; on the Mac the extension's toolbar icon
+# scaled up. Replace it every build so it can never go stale.
+if [ "$IS_MAC" = 1 ]; then
+  bash "$SRC/scripts/mac-icon.sh" "$PROJDIR/Kindgate/Assets.xcassets/AppIcon.appiconset" || exit 6
+else
+  bash "$SRC/scripts/app-icon.sh" "$PROJDIR/Kindgate/Assets.xcassets/AppIcon.appiconset" || exit 6
 fi
 
 step "Versions"
@@ -374,18 +509,24 @@ find_team() {
 }
 TEAM="$DEVELOPMENT_TEAM"
 [ "$MODE" = simulator ] && TEAM=none      # a simulator build is not signed
+[ "$FORCE_ADHOC" = 1 ] && TEAM=           # --adhoc: as if there were no team
 if [ -z "$TEAM" ] && [ "$MODE" != device ] && [ "$MODE" != mac ]; then
   TEAM=$(find_team "Apple Distribution")
+  [ -z "$TEAM" ] && [ "$IS_MAC" = 1 ] && TEAM=$(find_team "3rd Party Mac Developer Application")
   [ -n "$TEAM" ] && echo "Using the Apple Distribution certificate"
 fi
-[ -z "$TEAM" ] && TEAM=$(find_team "Apple Development")
+# The Mac Debug build does not go looking for a certificate. With the App
+# Group, a team-signed Mac build needs a provisioning profile, which Xcode
+# fetches or creates on the developer account; that should happen because
+# DEVELOPMENT_TEAM was set, not because a certificate happens to be in the
+# keychain.
+[ -z "$TEAM" ] && [ "$MODE" != mac ] && TEAM=$(find_team "Apple Development")
 ADHOC=0
 if [ -z "$TEAM" ] && [ "$MODE" = mac ]; then
-  # No certificate and no team: sign ad hoc, Xcode's "Sign to Run Locally".
-  # The build runs on this Mac only, and Safari treats its extension as
-  # unsigned (see the closing text).
+  # Sign ad hoc, Xcode's "Sign to Run Locally". The build runs on this Mac
+  # only, and Safari treats its extension as unsigned (see the closing text).
   ADHOC=1; TEAM=none
-  echo "No signing certificate or team: signing to run locally (ad hoc)."
+  echo "Signing to run locally (ad hoc). For a team-signed build set DEVELOPMENT_TEAM=<team id>."
 fi
 if [ -z "$TEAM" ]; then
   echo "No signing certificate found yet."
@@ -401,6 +542,11 @@ COMMON_SETTINGS=(
   MARKETING_VERSION="$VERSION"
   CURRENT_PROJECT_VERSION="$BUILD"
 )
+# With a team, let Xcode register the App Group for the Mac targets as well:
+# group. ids on macOS are authorised by the provisioning profile, and this
+# setting is what makes automatic signing put them there. The converter sets it
+# on the app target only. https://developer.apple.com/forums/thread/721701
+[ "$IS_MAC" = 1 ] && COMMON_SETTINGS+=(REGISTER_APP_GROUPS=YES)
 PROVISIONING=(-allowProvisioningUpdates)
 if [ "$ADHOC" = 1 ]; then
   COMMON_SETTINGS=(
@@ -408,24 +554,98 @@ if [ "$ADHOC" = 1 ]; then
     MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD"
   )
   PROVISIONING=()
+  if grep -q "$APP_GROUP" "$PROJDIR/Kindgate/Kindgate.entitlements"; then
+    # Xcode refuses to sign an App Group whose id starts with "group." without
+    # a provisioning profile ("requires a provisioning profile"), and a local
+    # signature has none. So this build is signed with the sandbox alone, for
+    # both targets. The app notices and says that its three "allowed" rows
+    # cannot be shown; everything inside Safari works as usual.
+    cat > "$OUT/local.entitlements" <<'ENT'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+</dict>
+</plist>
+ENT
+    COMMON_SETTINGS+=(CODE_SIGN_ENTITLEMENTS="$OUT/local.entitlements")
+    echo "Local signature: sandbox only, no App Group."
+  fi
 fi
 
 # What has to be inside the built bundles. Checked on the product, because a
 # file can be in the project and still not be copied. $1 is Kindgate.app.
 check_bundle() {
-  local app="$1"
-  [ -f "$app/PrivacyInfo.xcprivacy" ] || { echo "No privacy manifest in the app bundle — see the Privacy manifests step."; return 1; }
-  [ -n "$(find "$app/PlugIns" -path '*.appex/PrivacyInfo.xcprivacy' 2>/dev/null)" ] || { echo "No privacy manifest in the extension bundle — see the Privacy manifests step."; return 1; }
+  local app="$1" res="$1" plug="$1/PlugIns" info="$1/Info.plist"
+  # A Mac bundle keeps everything one level down, in Contents.
+  [ -d "$app/Contents" ] && { res="$app/Contents/Resources"; plug="$app/Contents/PlugIns"; info="$app/Contents/Info.plist"; }
+  [ -f "$res/PrivacyInfo.xcprivacy" ] || { echo "No privacy manifest in the app bundle — see the Privacy manifests step."; return 1; }
+  [ -n "$(find "$plug" -name PrivacyInfo.xcprivacy -path '*.appex/*' 2>/dev/null)" ] || { echo "No privacy manifest in the extension bundle — see the Privacy manifests step."; return 1; }
   echo "Privacy manifest: app and extension"
-  [ "$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - "$app/Info.plist" 2>/dev/null)" = false ] || { echo "ITSAppUsesNonExemptEncryption is not false in the built Info.plist — see the export compliance step."; return 1; }
+  [ "$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - "$info" 2>/dev/null)" = false ] || { echo "ITSAppUsesNonExemptEncryption is not false in the built Info.plist — see the export compliance step."; return 1; }
   echo "Export compliance: declared, no non-exempt encryption"
   # The fonts (OFL) and the lists (MIT) may only be shipped with their licence
   # texts, and the popup's "Open source licences" reads these two files.
   local f
   for f in fonts/OFL.txt lists/LICENSE; do
-    [ -n "$(find "$app/PlugIns" -path "*.appex/*$f" 2>/dev/null)" ] || { echo "$f is not in the extension bundle."; return 1; }
+    [ -n "$(find "$plug" -path "*.appex/*$f" 2>/dev/null)" ] || { echo "$f is not in the extension bundle."; return 1; }
   done
   echo "Licence texts: fonts/OFL.txt, lists/LICENSE"
+}
+
+# The Mac-only part: what the store and the "anyone can check" claim rest on.
+# $1 is Kindgate.app as built or archived.
+check_mac_bundle() {
+  local app="$1" appex res="$1/Contents/Resources" info="$1/Contents/Info.plist"
+  appex=$(find "$app/Contents/PlugIns" -maxdepth 1 -name '*.appex' | head -1)
+  [ -n "$appex" ] || { echo "No extension in $app/Contents/PlugIns."; return 1; }
+  [ "$(plutil -extract LSApplicationCategoryType raw -o - "$info" 2>/dev/null)" = public.app-category.productivity ] || { echo "LSApplicationCategoryType is not set in the built Info.plist."; return 1; }
+  echo "Category: public.app-category.productivity"
+  local icon; icon=$(plutil -extract CFBundleIconFile raw -o - "$info" 2>/dev/null)
+  [ -n "$icon" ] && [ -f "$res/${icon%.icns}.icns" ] || { echo "No app icon (.icns) in the app bundle — see the App icon step."; return 1; }
+  echo "App icon: ${icon%.icns}.icns, $(sips -g pixelWidth "$res/${icon%.icns}.icns" 2>/dev/null | sed -n 's/.*pixelWidth: //p') px"
+  local f
+  for f in Main.html Script.js Style.css Icon.png; do
+    [ -z "$(find "$res" -name "$f" 2>/dev/null)" ] || { echo "The converter's placeholder $f is still in the app bundle."; return 1; }
+  done
+  echo "Placeholder files: none"
+  # Entitlements as signed, not as written: exactly the sandbox and the App
+  # Group, plus get-task-allow in a Debug build.
+  local b
+  for b in "$app" "$appex"; do
+    codesign -d --entitlements - --xml "$b" 2>/dev/null | python3 -c '
+import plistlib, sys
+name, group = sys.argv[1], sys.argv[2]
+data = sys.stdin.buffer.read()
+ent = plistlib.loads(data) if data.strip() else {}
+problems = []
+if ent.get("com.apple.security.app-sandbox") is not True:
+    problems.append("App Sandbox is off")
+groups = ent.get("com.apple.security.application-groups", [])
+if group and group not in groups:
+    problems.append("App Group %s is missing" % group)
+if not group and groups:
+    problems.append("a local signature should carry no App Group")
+allowed = {"com.apple.security.app-sandbox", "com.apple.security.application-groups",
+           "com.apple.security.get-task-allow", "com.apple.application-identifier",
+           "com.apple.developer.team-identifier"}
+extra = sorted(set(ent) - allowed)
+if extra:
+    problems.append("unexpected entitlements: " + ", ".join(extra))
+if problems:
+    sys.exit("%s: %s" % (name, "; ".join(problems)))
+print("Entitlements, %s: %s" % (name, ", ".join(sorted(ent))))
+' "$(basename "$b")" "$([ "$ADHOC" = 1 ] || echo "$APP_GROUP")" || return 1
+    codesign -d --verbose=2 "$b" 2>&1 | grep -q 'flags=.*runtime' \
+      && echo "Hardened runtime, $(basename "$b"): on" \
+      || echo "Hardened runtime, $(basename "$b"): not in this signature (ad-hoc Debug builds leave it out; a Release archive must have it)"
+  done
+  # The extension's files against the source, the check a user can repeat on
+  # an installed copy with scripts/verify-install.sh.
+  python3 "$SRC/scripts/hashes.py" > "$OUT/SHA256SUMS" || return 1
+  bash "$SRC/scripts/verify-install.sh" "$app" --sums "$OUT/SHA256SUMS" | tail -3 || return 1
 }
 
 if [ "$MODE" = simulator ]; then
@@ -454,10 +674,24 @@ if [ "$MODE" = mac ]; then
   xcodebuild -project "$PROJ" -scheme Kindgate -configuration Debug \
     -destination "platform=macOS" -derivedDataPath "$OUT/DerivedData" \
     "${PROVISIONING[@]}" "${COMMON_SETTINGS[@]}" build | grep -E "error:|warning: no|BUILD|Signing|Provisioning"
-  [ "${PIPESTATUS[0]}" = 0 ] || { echo "BUILD FAILED — see $LOG"; xcodebuild -list -project "$PROJ"; open_project; exit 4; }
+  if [ "${PIPESTATUS[0]}" != 0 ]; then
+    echo "BUILD FAILED — see $LOG"
+    if [ "$ADHOC" = 0 ] && grep -q -E "isn't registered in your developer account|No profiles for" "$LOG"; then
+      # The App Group makes a team-signed Mac build need a provisioning profile,
+      # and a development profile lists the Macs it may run on.
+      echo
+      echo "Signing with team $TEAM needs a Mac development profile for $BUNDLE, and this Mac"
+      echo "is not registered with the team. Either build without the team: bash build.sh --mac --adhoc"
+      echo "or register this Mac once: open the project in Xcode, select each target, Signing &"
+      echo "Capabilities, and let Xcode register the device; then re-run."
+    fi
+    open_project; exit 4
+  fi
 
   APP=$(find "$OUT/DerivedData/Build/Products/Debug" -maxdepth 1 -name "Kindgate.app" | head -1)
   [ -n "$APP" ] || { echo "Kindgate.app not found under $OUT/DerivedData"; exit 5; }
+  step "Check the built app"
+  check_bundle "$APP" && check_mac_bundle "$APP" || exit 9
   if [ "$INSTALL" = 1 ]; then
     step "Install to ~/Applications"
     mkdir -p "$HOME/Applications"
@@ -478,8 +712,9 @@ if [ "$MODE" = mac ]; then
     echo "That setting resets every time Safari quits; the extension is then hidden again until"
     echo "you tick the box once more. Then Safari > Settings > Extensions: tick Kindgate and"
     echo "allow it on every website (or at least youtube.com and instagram.com)."
-    echo "To avoid the toggle, add your Apple ID in Xcode > Settings > Accounts and re-run:"
-    echo "the build is then signed with your development certificate."
+    echo "To avoid the toggle, add your Apple ID in Xcode > Settings > Accounts and re-run with"
+    echo "DEVELOPMENT_TEAM=<team id>: the build is then signed with your development certificate."
+    echo "That needs this Mac registered with the team (Xcode offers it under Signing & Capabilities)."
   else
     echo "Safari > Settings > Extensions: tick Kindgate, then allow it on every website"
     echo "(or at least youtube.com and instagram.com). A signed build stays installed across"
@@ -543,8 +778,9 @@ fi
 step "Archive"
 ARCHIVE="$OUT/build/Kindgate-$VERSION-$BUILD.xcarchive"
 rm -rf "$ARCHIVE"
+ARCHIVE_FOR="generic/platform=iOS"; [ "$IS_MAC" = 1 ] && ARCHIVE_FOR="generic/platform=macOS"
 xcodebuild -project "$PROJ" -scheme Kindgate -configuration Release \
-  -destination "generic/platform=iOS" -archivePath "$ARCHIVE" \
+  -destination "$ARCHIVE_FOR" -archivePath "$ARCHIVE" \
   -derivedDataPath "$OUT/DerivedData" -allowProvisioningUpdates \
   "${AUTH[@]}" "${COMMON_SETTINGS[@]}" archive | grep -E "error:|warning: no|ARCHIVE|Signing|Provisioning"
 if [ "${PIPESTATUS[0]}" != 0 ]; then
@@ -552,7 +788,7 @@ if [ "${PIPESTATUS[0]}" != 0 ]; then
   # Automatic signing reports a missing distribution profile as a missing input
   # file, naming a .mobileprovision it was supposed to have downloaded. That is
   # almost always the credential gap rather than anything wrong with the code.
-  if grep -q "Build input file cannot be found.*mobileprovision" "$LOG"; then
+  if grep -q -E "Build input file cannot be found.*(mobileprovision|provisionprofile)" "$LOG"; then
     echo
     echo "No App Store provisioning profile could be downloaded for team $TEAM."
     if [ ${#AUTH[@]} -eq 0 ]; then
@@ -570,6 +806,10 @@ step "Check the archive"
 # What has to be inside the bundles for App Store Connect to accept the upload.
 ARCHIVED_APP="$ARCHIVE/Products/Applications/Kindgate.app"
 check_bundle "$ARCHIVED_APP" || exit 9
+if [ "$IS_MAC" = 1 ]; then
+  check_mac_bundle "$ARCHIVED_APP" || exit 9
+  codesign -d --verbose=2 "$ARCHIVED_APP" 2>&1 | grep -q 'flags=.*runtime' || { echo "The archived app is signed without the hardened runtime."; exit 9; }
+fi
 
 step "Export"
 EXPORT_DIR="$OUT/build/export-$VERSION-$BUILD"
@@ -606,5 +846,10 @@ if [ "$MODE" = upload ]; then
 else
   echo "Archive:  $ARCHIVE"
   echo "Exported: $EXPORT_DIR"
-  echo "Re-run with --upload to send it to App Store Connect."
+  if [ "$IS_MAC" = 1 ]; then
+    echo "The .pkg in that folder is what the Mac App Store takes. This script does not upload"
+    echo "it: use Transporter, or Xcode > Window > Organizer with the archive above."
+  else
+    echo "Re-run with --upload to send it to App Store Connect."
+  fi
 fi

@@ -1,0 +1,2 @@
+- The Mac app no longer contains Apple's placeholder code, which wrote every message from the extension to the system log. It uses the same small handler as the iPhone app, and its source is in the repository.
+- The Mac app asks macOS for less: it runs in the sandbox with no network access and no access to files.

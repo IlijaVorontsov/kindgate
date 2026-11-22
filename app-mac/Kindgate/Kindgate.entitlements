@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Everything the Mac app may do beyond its own sandbox: read the status the
+  extension leaves in the shared App Group. No network, no files, no devices.
+  The App Group id is the iPhone app's (app/Kindgate/Kindgate.entitlements).
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.app.kindgate</string>
+	</array>
+</dict>
+</plist>

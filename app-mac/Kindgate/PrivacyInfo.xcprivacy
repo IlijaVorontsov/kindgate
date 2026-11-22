@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest for the Mac app. Keep it true to ViewController.swift here.
+  Apple requires the file for iOS uploads only; the Mac app carries one so both
+  apps state the same thing in the same place.
+
+  The app's only required-reason API is UserDefaults(suiteName:) on the App
+  Group, to read the status the extension writes. Reason 1C8F.1 is Apple's
+  code for user defaults shared inside one App Group. No tracking, no
+  collected data: the app makes no network requests.
+
+  build.sh --mac adds this file to the app target's resources; a copy that is only
+  on disk is not bundled and does nothing.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

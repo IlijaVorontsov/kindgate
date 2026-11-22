@@ -1,0 +1,1 @@
+- `build.sh --mac` signs the app to run locally unless `DEVELOPMENT_TEAM` is set, so a build never contacts Apple's signing service unasked. `--mac --release` prepares an archive for the Mac App Store.

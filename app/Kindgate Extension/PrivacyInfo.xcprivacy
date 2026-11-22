@@ -10,7 +10,8 @@
   no collected data: neither the handler nor the scripts make network requests.
 
   build.sh adds this file to the extension target's resources; a copy that is
-  only on disk is not bundled and does nothing.
+  only on disk is not bundled and does nothing. The Mac build uses this same
+  file, and scripts/hashes.py lists it with the extension's files.
 -->
 <plist version="1.0">
 <dict>
