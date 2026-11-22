@@ -1,10 +1,12 @@
 /* Kindgate — Instagram: only accounts you follow */
 
 /* Navigation entry points to Reels / Explore (sidebar, bottom tab bar, top bar) */
+/* Exact paths only: a post from someone you follow can be a video whose own
+   link starts with /reels/<id>/, and a prefix match hid its picture. */
 html.kg-ig-reels a[href="/reels/"],
-html.kg-ig-reels a[href^="/reels/"],
+html.kg-ig-reels a[href="/reels"],
 html.kg-ig-reels a[href="/explore/"],
-html.kg-ig-reels a[href^="/explore/"],
+html.kg-ig-reels a[href="/explore"],
 html.kg-ig-reels a[href="/explore/search/"],
 /* Direct-link variants Instagram sometimes uses */
 html.kg-ig-reels [role="link"][href="/reels/"],

@@ -38,7 +38,9 @@
   function applyFeatureClasses() { const r = document.documentElement; if (r) r.classList.toggle('kg-ig-reels', !!F.igReels); }
   applyFeatureClasses();
 
-  const BLOCKED_PATHS = [/^\/reels\/?/, /^\/reel\/?$/, /^\/explore\/?/];
+  // The Reels tab and Explore. A single reel (/reel/<id>/ or /reels/<id>/) is
+  // a post: from your feed it is someone you follow, so it stays reachable.
+  const BLOCKED_PATHS = [/^\/reels\/?$/, /^\/reel\/?$/, /^\/explore(\/|$)/];
   const HOME_FOLLOWING = '/?variant=following';
 
   // Text markers Instagram uses for algorithmic content (English + German UI)
@@ -53,6 +55,17 @@
   // Instagram's ad label. Matched as a whole label, not as a substring, so a
   // caption that merely mentions the word does not take the post with it.
   const SPONSORED_TEXT = ['sponsored', 'gesponsert'];
+  // The desktop site labels the same posts "Ad" (German: "Anzeige" or
+  // "Werbung"). A word this short is only trusted in a post's header row,
+  // next to the account name, never further down where a caption could say it.
+  const AD_TEXT = ['ad', 'anzeige', 'werbung'];
+  function inPostHeader(el) {
+    const art = el.closest('article');
+    if (!art) return false;
+    if (el.closest('header')) return true;
+    const a = art.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return r.height > 0 && r.top - a.top < 90;
+  }
   // Creator posts carrying a brand disclosure. These come from accounts you
   // chose to follow, so they are left alone by default — add them to
   // SPONSORED_TEXT if you want them gone too.
@@ -148,13 +161,17 @@
     // A long feed holds thousands of leaves, and this ran on every mutation and
     // every 2 s. Each leaf is now read once; new posts arrive as new nodes, so
     // nothing is missed and a sweep no longer walks the whole scrollback.
-    for (const el of main.querySelectorAll('span:not([data-kg-ad]), div[dir="auto"]:not([data-kg-ad]), a:not([data-kg-ad]), h2:not([data-kg-ad])')) {
+    for (const el of main.querySelectorAll('span:not([data-kg-ad]), div:not([data-kg-ad]), a:not([data-kg-ad]), h2:not([data-kg-ad])')) {
       if (el.firstElementChild) { el.setAttribute('data-kg-ad', ''); continue; }   // leaf text nodes only
       const t = lower(el.textContent).replace(/[\s·•|,-]+$/, '').trim();
       if (!t) continue;                                   // still empty; look again when it fills in
       el.setAttribute('data-kg-ad', '');
       if (t.length > 24) continue;
-      if (!SPONSORED_TEXT.includes(t)) continue;
+      if (AD_TEXT.includes(t) && !inPostHeader(el)) {
+        if (!el.getBoundingClientRect().height) el.removeAttribute('data-kg-ad');   // not laid out yet: read it again
+        continue;
+      }
+      if (!SPONSORED_TEXT.includes(t) && !AD_TEXT.includes(t)) continue;
       if (el.closest('[data-kindgate-hidden]')) continue;
       hideAd(el, main);
     }
