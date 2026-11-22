@@ -656,7 +656,7 @@
     });
   });
 
-  const FEATURE_DEFAULTS = { ytHome: true, ytShorts: true, ytRelated: true, ytComments: true, ytAutoplay: true, ytTabBar: true, ytPip: true, ytRotate: true, ytGuide: true, igFollowing: true, igReels: true, igSuggested: true, igAds: true, igCheckpoint: true, mediaKeys: true };
+  const FEATURE_DEFAULTS = { ytHome: true, ytShorts: true, ytRelated: true, ytComments: true, ytAutoplay: true, ytTabBar: true, ytPip: true, ytRotate: true, ytGuide: true, igFollowing: true, igReels: true, igSuggested: true, igAds: true, igCheckpoint: true, mediaKeys: true, speedCarry: false };
   const featureBoxes = [...document.querySelectorAll('input[data-feature]')];
   api.get(['fgFeatures']).then((d) => {
     const f = Object.assign({}, FEATURE_DEFAULTS, (d && d.fgFeatures) || {});

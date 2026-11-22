@@ -1,0 +1,1 @@
+- Optional: carry speed changes from the player over to all videos. A speed you pick in any player's own menu becomes the speed for every video in every tab, also on the iPhone, where there are no keys. Off by default; site-made changes and ads are ignored.
