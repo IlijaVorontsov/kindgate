@@ -84,6 +84,16 @@ builds: `bash build.sh --release` archives and exports a signed `.ipa`, and
 key, team id and tester checklist are in the private ops repo's
 [TestFlight runbook](https://github.com/IlijaVorontsov/kindgatex/blob/main/docs/testflight.md).
 
+**On a Mac**, `bash build.sh --mac` builds a macOS-only project in a
+`Kindgate-Xcode-mac` folder beside this one, signs it with your Apple
+Development certificate, copies `Kindgate.app` to `~/Applications` and opens it
+once so Safari picks up the extension. Then tick Kindgate in Safari → Settings →
+Extensions and allow it on every website. Without Xcode, `bash build.sh --stage`
+only stages the extension folder: load it from Safari → Settings → Developer →
+*Add Temporary Extension…* (turn on *Allow unsigned extensions* first). Safari
+drops a temporary extension when it quits or after 24 hours, so this is for
+trying changes, not daily use.
+
 Then open Kindgate on the phone. Its [setup checklist](#the-container-app)
 covers enabling the extension, allowing the sites and deleting the apps, and
 each step turns green by itself once it is done.

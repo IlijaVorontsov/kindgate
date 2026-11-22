@@ -5,6 +5,11 @@
 #   bash build.sh                 Debug build, install over USB (the default)
 #   bash build.sh --release       Release archive, exported as a signed .ipa
 #   bash build.sh --upload        ...and upload it to App Store Connect
+#   bash build.sh --mac           macOS build, installed to ~/Applications
+#   bash build.sh --stage         only stage the extension folder, for Safari's
+#                                 Settings > Developer > Add Temporary Extension
+#                                 (no Xcode needed; Safari drops it on quit or
+#                                 after 24 h)
 #
 # --release and --upload need the paid Apple Developer Program membership and
 # an App Store Connect API key. The runbook lives in the private ops repo:
@@ -37,18 +42,30 @@ for arg in "$@"; do
   case "$arg" in
     --release) MODE=release;;
     --upload)  MODE=upload;;
-    -h|--help) sed -n '2,11p' "$0"; exit 0;;
+    --mac)     MODE=mac;;
+    --stage)   MODE=stage;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0;;
     *) echo "Unknown option: $arg (try --help)"; exit 1;;
   esac
 done
+
+# The Mac build is a separate macOS-only project next to the iOS one: the
+# converter lays a universal project out differently, which app/ is not
+# shaped for. Same bundle id, so the two can later become a universal purchase.
+if [ "$MODE" = mac ]; then
+  OUT="$(dirname "$SRC")/Kindgate-Xcode-mac"
+  STAGE="$OUT/stage"; PROJDIR="$OUT/Kindgate"; PROJ="$PROJDIR/Kindgate.xcodeproj"; PBX="$PROJ/project.pbxproj"
+fi
 
 exec > >(tee "$LOG") 2>&1
 echo "== Kindgate build ($MODE) $(date) =="
 
 step() { echo; echo "---- $* ----"; }
 
-step "Xcode"
-xcodebuild -version || { echo "Xcode command-line tools not ready. Open Xcode once, accept the license, then re-run."; exit 1; }
+if [ "$MODE" != stage ]; then
+  step "Xcode"
+  xcodebuild -version || { echo "Xcode not ready. Install Xcode, run 'sudo xcode-select -s /Applications/Xcode.app', open it once, then re-run."; exit 1; }
+fi
 
 step "Stage the extension"
 # Only the extension goes to the converter. Staging is what keeps app/, the
@@ -57,6 +74,16 @@ step "Stage the extension"
 mkdir -p "$STAGE"
 rsync -a --delete "${STAGE_EXCLUDES[@]}" "$SRC/" "$STAGE/" || exit 1
 ls "$STAGE"
+
+if [ "$MODE" = stage ]; then
+  echo
+  echo "== STAGED =="
+  echo "$STAGE"
+  echo "Safari > Settings > Advanced: show features for web developers."
+  echo "Safari > Settings > Developer: Allow unsigned extensions, then Add Temporary Extension... and pick the folder above."
+  echo "After editing a file, re-run --stage and press Reload next to Kindgate in that list."
+  exit 0
+fi
 
 step "Convert web extension -> Xcode project"
 # The converter references each resource file individually, so a file added
@@ -82,15 +109,21 @@ if [ -f "$PBX" ]; then
 fi
 if [ ! -d "$PROJ" ]; then
   rm -rf "$PROJDIR"
-  xcrun safari-web-extension-converter "$STAGE" \
+  # Xcode 26 renamed the converter to safari-web-extension-packager.
+  CONVERTER=safari-web-extension-packager
+  xcrun --find "$CONVERTER" >/dev/null 2>&1 || CONVERTER=safari-web-extension-converter
+  PLATFORM_FLAG=--ios-only; [ "$MODE" = mac ] && PLATFORM_FLAG=--macos-only
+  xcrun "$CONVERTER" "$STAGE" \
     --project-location "$OUT" --app-name Kindgate \
-    --bundle-identifier "$BUNDLE" --ios-only --swift --no-open --force --copy-resources || exit 1
+    --bundle-identifier "$BUNDLE" "$PLATFORM_FLAG" --swift --no-open --force --copy-resources || exit 1
 else
   echo "Project exists, syncing resources"
   rsync -a --delete "$STAGE/" "$PROJDIR/Kindgate Extension/Resources/"
 fi
 ls "$PROJ" >/dev/null || { echo "Project not found at $PROJ"; exit 1; }
 
+if [ "$MODE" != mac ]; then
+# The container app in app/ is UIKit; the Mac build keeps the converter's own app.
 step "Overlay app/ onto the generated project"
 # Replaces the converter's ViewController.swift, Main.storyboard and
 # SafariWebExtensionHandler.swift, and adds the two entitlements files.
@@ -131,6 +164,8 @@ step "App Info.plist: URL schemes the checklist may query"
 plutil -replace LSApplicationQueriesSchemes -json '["youtube","instagram"]' "$PROJDIR/Kindgate/Info.plist" || exit 1
 plutil -extract LSApplicationQueriesSchemes json -o - "$PROJDIR/Kindgate/Info.plist"
 
+fi
+
 step "Normalise bundle identifiers"
 # The converter names the app target after the app name (dev.vorontsov.Kindgate)
 # while the extension keeps the requested id, so the extension is no longer
@@ -142,10 +177,12 @@ sed -i '' \
   "$PBX"
 grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$PBX" | sort -u
 
+if [ "$MODE" != mac ]; then   # app-icon.sh fills the iOS single-size icon set
 step "App icon"
 # The converter ships Apple's placeholder, which is also transparent and would
 # be rejected on upload. Replace it every build so it can never go stale.
 bash "$SRC/scripts/app-icon.sh" "$PROJDIR/Kindgate/Assets.xcassets/AppIcon.appiconset" || exit 6
+fi
 
 step "Versions"
 # manifest.json is the single source of the release number. The build number
@@ -169,7 +206,7 @@ find_team() {
     sed -n 's/^ *OU=//p' | head -1
 }
 TEAM="$DEVELOPMENT_TEAM"
-if [ -z "$TEAM" ] && [ "$MODE" != device ]; then
+if [ -z "$TEAM" ] && [ "$MODE" != device ] && [ "$MODE" != mac ]; then
   TEAM=$(find_team "Apple Distribution")
   [ -n "$TEAM" ] && echo "Using the Apple Distribution certificate"
 fi
@@ -188,6 +225,30 @@ COMMON_SETTINGS=(
   MARKETING_VERSION="$VERSION"
   CURRENT_PROJECT_VERSION="$BUILD"
 )
+
+if [ "$MODE" = mac ]; then
+  step "Build for this Mac"
+  xcodebuild -project "$PROJ" -scheme Kindgate -configuration Debug \
+    -destination "platform=macOS" -derivedDataPath "$OUT/DerivedData" \
+    -allowProvisioningUpdates "${COMMON_SETTINGS[@]}" build | grep -E "error|warning: no|BUILD|Signing|Provisioning"
+  [ "${PIPESTATUS[0]}" = 0 ] || { echo "BUILD FAILED — see $LOG"; xcodebuild -list -project "$PROJ"; open "$PROJ"; exit 4; }
+
+  APP=$(find "$OUT/DerivedData/Build/Products/Debug" -maxdepth 1 -name "Kindgate.app" | head -1)
+  [ -n "$APP" ] || { echo "Kindgate.app not found under $OUT/DerivedData"; exit 5; }
+  step "Install to ~/Applications"
+  mkdir -p "$HOME/Applications"
+  rm -rf "$HOME/Applications/Kindgate.app"
+  cp -R "$APP" "$HOME/Applications/" || exit 5
+  # Opening the app once registers its extension with Safari.
+  open "$HOME/Applications/Kindgate.app"
+
+  echo
+  echo "== DONE =="
+  echo "Safari > Settings > Extensions: tick Kindgate, then allow it on every website"
+  echo "(or at least youtube.com and instagram.com). A signed build stays installed across"
+  echo "Safari restarts; no unsigned-extensions toggle needed."
+  exit 0
+fi
 
 if [ "$MODE" = device ]; then
   step "Connected iPhone"
