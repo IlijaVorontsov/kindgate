@@ -9,9 +9,9 @@
 //  * Inside a window (after work, night): the decision was made earlier, so the
 //    card doesn't ask you to decide — it shows the plans you set, one tap each
 //    (implementation intentions), offers a 10-minute delay instead of a flat
-//    "no" (cravings decay), rewards the choice immediately with a win count and
-//    streak, and puts a short countdown on "continue anyway" so the impulsive
-//    path is slightly slower than the planned one.
+//    "no" (a second decision, later), counts the choice as a win for the week
+//    (a total, no streak to break), and puts a short countdown on "continue
+//    anyway" so the impulsive path is slightly slower than the planned one.
 
 (() => {
   'use strict';
@@ -122,13 +122,8 @@
   function winStats(wins) {
     const since = Date.now() - WEEK_MS;
     const week = wins.filter((w) => w.t >= since).length;
-    // Streak: consecutive calendar days (ending today or yesterday) with a win.
-    const days = new Set(wins.map((w) => new Date(w.t).toDateString()));
-    let streak = 0;
-    const d = new Date();
-    if (!days.has(d.toDateString())) d.setDate(d.getDate() - 1);
-    while (days.has(d.toDateString())) { streak++; d.setDate(d.getDate() - 1); }
-    return { week, streak };
+    // A weekly total only. A streak would turn one missed day into a loss.
+    return { week };
   }
 
   // ---- closed shadow root -------------------------------------------------------
@@ -335,7 +330,7 @@
     page.appendChild(el('div', 'kg-timer-kicker', win.name));
     const clock = el('div', 'kg-timer-clock', '10:00');
     page.appendChild(clock);
-    const line = el('p', 'kg-timer-line', 'Most urges are gone before this reaches zero.');
+    const line = el('p', 'kg-timer-line', 'When this reaches zero, you decide again.');
     page.appendChild(line);
 
     const [q, who] = pickQuote();
@@ -358,7 +353,7 @@
         }
         close();
         const s = await logWin(wins, (p.win || p.label).trim(), win.key);
-        showToast(`Win ${s.week} this week.` + (s.streak >= 2 ? ` ${s.streak}-day streak.` : '') + ' Off you go.');
+        showToast(`Win ${s.week} this week. Off you go.`);
         setTimeout(() => leave(p.url && p.url.trim()), 900);
       });
       grid.appendChild(b);
@@ -397,12 +392,12 @@
   }
 
   // ---- "Can't sleep?" -------------------------------------------------------------
-  // CBT-I stimulus control (get out of bed, no clock-watching, fixed wake time)
-  // plus the two tools Huberman recommends for the 3am wake-up: keep light very
-  // low, and the physiological sigh (Balban et al. 2023). Drawn in dim amber on
-  // black on purpose — the screen itself should not be a light source.
+  // One rule borrowed from insomnia treatment (CBT-I stimulus control: get out
+  // of bed, no clock-watching, fixed wake time), low light, and a breathing
+  // pattern (cyclic sighing, tested by Balban et al. 2023 for mood, not sleep).
+  // Drawn dim on purpose: dimmer is what matters; the amber is for comfort.
   const SLEEP_STEPS = [
-    ['Get out of bed', 'Awake 20 minutes? Get up, sit somewhere dim. Back to bed only when sleepy.'],
+    ['Get out of bed', 'Awake for a long while? Get up, sit somewhere dim. Back to bed only when sleepy.'],
     ['Keep the light low', 'No overhead lights. Screen as dim as it goes.'],
     ['Slow the body down', 'Two breaths in through the nose, one long one out through the mouth.'],
     ['Don\u2019t check the time', 'Phone face down. Counting lost hours keeps you awake.'],
@@ -423,7 +418,7 @@
     const box = el('div', 'kg-success');
     box.appendChild(el('div', 'kg-success-check', '\u2713'));
     box.appendChild(el('div', 'kg-success-kicker', 'Win logged'));
-    box.appendChild(el('h1', 'kg-success-title', `Win ${stats.week} this week` + (stats.streak >= 2 ? ` \u00B7 ${stats.streak}-day streak` : '')));
+    box.appendChild(el('h1', 'kg-success-title', `Win ${stats.week} this week`));
     box.appendChild(el('p', 'kg-success-msg', msg));
     host.appendChild(box);
   }
@@ -452,7 +447,7 @@
     const page = el('div', 'kg-sleep-page');
     root.appendChild(page);
     page.appendChild(el('div', 'kg-sleep-kicker', `${win.name} \u00B7 ${hhmm(new Date())}`));
-    page.appendChild(el('h1', 'kg-sleep-title', 'It\u2019s late. The urge is loud, but it passes in minutes.'));
+    page.appendChild(el('h1', 'kg-sleep-title', 'It\u2019s late. An urge is a feeling, not an order.'));
     page.appendChild(el('p', 'kg-sleep-sub', 'Here\u2019s what actually helps:'));
 
     const ol = el('ol', 'kg-sleep-steps');
@@ -527,7 +522,7 @@
     cont.classList.add('kg-sleep-link');
 
     page.appendChild(el('p', 'kg-sleep-note',
-      'Three or more nights a week for months? That\u2019s insomnia \u2014 CBT-I with a clinician works; an app doesn\u2019t.'));
+      'Three or more nights a week for months? That can be insomnia, and it has a treatment that works: CBT-I, with a clinician or a tested programme. This page is not that treatment.'));
   }
 
 
@@ -565,11 +560,10 @@
   }
 
   // ---- morning ------------------------------------------------------------------
-  // Sleep inertia: for roughly 15-30 minutes after waking the anterior cortical
-  // regions are still coming back up (Balkin et al. 2002), so executive control
-  // is at its weakest and behaviour runs on whatever is cued by the context
-  // (Neal, Wood & Drolet 2013). The page therefore asks nothing and decides
-  // nothing - it just shows the sequence that was chosen the night before.
+  // Sleep inertia: for a while after waking (typically 15-30 minutes, longer on
+  // careful measures; Hilditch & McHill 2019) thinking is slower. The page
+  // therefore asks nothing and decides nothing - it just shows the sequence
+  // that was chosen the night before.
   function morningsKept(wins) {
     const since = Date.now() - WEEK_MS;
     return new Set(wins.filter((w) => w.t >= since && w.window === 'morning')
@@ -577,7 +571,7 @@
   }
 
   const today = () => new Date().toDateString();
-  const DEFAULT_COFFEE_MIN = 90;   // caffeine blocks adenosine rather than clearing it
+  const DEFAULT_COFFEE_MIN = 90;   // a ritual, not physiology: no trial backs a delay
 
   // "Up" is when you ticked the first step, else when the page first appeared.
   const wokeAt = (p) => (p && p.day === today()) ? (p.wokeAt || p.started || 0) : 0;
@@ -640,14 +634,14 @@
     const clock = el('div', 'kg-morning-clock', '');
     page.appendChild(clock);
     const note = el('p', 'kg-morning-sub',
-      'For the first 15\u201330 minutes after waking, the parts of your brain that weigh things up are still returning to full blood flow. Don\u2019t decide anything yet \u2014 just run the list.');
+      'For a while after waking, thinking is slower. Don\u2019t decide anything yet \u2014 just run the list.');
     page.appendChild(note);
 
     // Created here so paint() can reference them; appended below the list.
     const coffee = el('div', 'kg-coffee');
     const coffeeLine = el('div', 'kg-coffee-line', '');
     coffee.append(coffeeLine, el('div', 'kg-coffee-why',
-      'Caffeine blocks adenosine rather than clearing it, so an early coffee masks a process that is still finishing. Waiting lets the cortisol rise do it first.'));
+      'A ritual, not a rule: a set time for the first coffee gives the morning a shape.'));
 
     const paintCoffee = () => {
       const from = prog.wokeAt || prog.started;
@@ -831,14 +825,14 @@
       if (wins.length > MAX_ENTRIES) wins.splice(0, wins.length - MAX_ENTRIES);
       await save({ fgWins: wins, [LAST]: Date.now(), [SNOOZE]: 0 });
       const s = winStats(wins);
-      showToast(`Win ${s.week} this week.` + (s.streak >= 2 ? ` ${s.streak}-day streak.` : '') + (url ? '' : ' Goodnight.'));
+      showToast(`Win ${s.week} this week.` + (url ? '' : ' Goodnight.'));
       setTimeout(() => leave(url), 900);
     };
 
     if (snoozed) {
       const left = Math.max(1, Math.ceil((snoozeUntil - Date.now()) / 60000));
       card.appendChild(el('h1', 'kg-title', `You asked for 10 minutes — ${left} left.`));
-      card.appendChild(el('p', 'kg-sub', 'Most urges are gone by then. Your plan is still here.'));
+      card.appendChild(el('p', 'kg-sub', 'Then you decide again. Your plan is still here.'));
     } else {
       card.appendChild(el('h1', 'kg-title', 'You decided this earlier.'));
       card.appendChild(el('p', 'kg-sub', 'Pick the thing you planned — that’s the whole job right now.'));
@@ -871,8 +865,8 @@
 
     continueLink(card, async () => { close(); await save({ [LAST]: Date.now() }); });
 
-    const stats = st.week || st.streak
-      ? `Wins this week: ${st.week}` + (st.streak >= 2 ? ` · ${st.streak}-day streak` : '')
+    const stats = st.week
+      ? `Wins this week: ${st.week}`
       : 'First win of the week is one step away.';
     card.appendChild(el('p', 'kg-stats', stats));
   }

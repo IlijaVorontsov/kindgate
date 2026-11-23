@@ -159,11 +159,8 @@
     const wins = (d && Array.isArray(d.fgWins)) ? d.fgWins : [];
     const since = Date.now() - WEEK_MS;
     $('wins').textContent = String(wins.filter((x) => x.t >= since).length);
-    const days = new Set(wins.map((x) => new Date(x.t).toDateString()));
-    let streak = 0; const dd = new Date();
-    if (!days.has(dd.toDateString())) dd.setDate(dd.getDate() - 1);
-    while (days.has(dd.toDateString())) { streak++; dd.setDate(dd.getDate() - 1); }
-    $('streak').textContent = streak >= 2 ? `${streak}-day streak` : (wins.length ? 'Last win: ' + new Date(wins[wins.length - 1].t).toLocaleDateString() : '');
+    // A weekly total and the last win, never a streak: one missed day is not a loss.
+    $('streak').textContent = wins.length ? 'Last win: ' + new Date(wins[wins.length - 1].t).toLocaleDateString() : '';
   });
   const nightAllow = $('nightAllow');
   api.get(['fgNightAllow']).then((d) => { nightAllow.value = ((d && d.fgNightAllow) || []).join('\n'); });

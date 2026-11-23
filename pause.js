@@ -2,9 +2,9 @@
 //
 // On sites you list, the page is covered by a short pause: a breathing prompt,
 // "what are you feeling?", the replacement you pre-set for that feeling, and a
-// "continue anyway" that unlocks after 10–20 s. Hard blocks get circumvented
-// and invite all-or-nothing thinking; a delay breaks the automatic loop and
-// lets the urge crest and fade.
+// "continue anyway" that unlocks after 10–20 s. A block works while it is on,
+// and many people take theirs down; a pause is small enough to keep, and the
+// choice stays yours.
 //
 // Goals are flexible (weekends only, not after midnight, not at work) or
 // abstinence. Outside a goal the pause is full length; inside it, short.
@@ -415,8 +415,8 @@
     page.appendChild(el('div', 'kg-pause-kicker', (night ? 'Pause · Night · ' : 'Pause · ') + hhmm(new Date())));
     page.appendChild(el('h1', 'kg-pause-title', goal.ok ? 'Within your goal. Take a breath first.' : 'Outside your goal — ' + goal.why + '.'));
     page.appendChild(el('p', 'kg-pause-sub', night
-      ? 'It’s late. Urges are louder at night and pass just as fast — this is the crest.'
-      : 'Urges crest and fade within minutes. This is the crest.'));
+      ? 'It’s late. An urge is a feeling, not an order.'
+      : 'An urge is a feeling, not an order. Breathe, then choose.'));
     breathing(page);
 
     page.appendChild(el('p', 'kg-pause-q', 'What are you feeling right now?'));

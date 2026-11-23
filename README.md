@@ -20,11 +20,10 @@ then asks one kind question instead of blocking anything.
 
 ---
 
-Blocking breeds wanting. Every hard blocker teaches you to route around it, and
-the guilt after a slip does more damage than the slip. Kindgate takes the other
-road: it removes the parts of YouTube and Instagram that are designed to keep
-you there, and where a blocker would say no, it asks a question and offers a
-way through.
+A block works while it is on, and many people take theirs down. Kindgate takes
+a smaller step that is easier to keep: it removes the parts of YouTube and
+Instagram that are designed to keep you there, and where a blocker would say
+no, it asks a question and leaves the choice with you.
 
 ## Contents
 
@@ -345,27 +344,32 @@ clear controls.
 A morning window, by default 06:00 to 08:30, in which opening a feed shows your
 three pre-set steps instead. No question, nothing to decide.
 
-The reasoning: for roughly 15 to 30 minutes after waking the anterior cortical
-regions are still returning to waking blood flow (Balkin et al. 2002), so
-executive control is at its lowest and behaviour follows whatever the context
-cues (Neal, Wood & Drolet 2013). The decision therefore belongs to the night
-before. The section also carries a five-point set-up routine, and says plainly
-that habits took a median of about 66 days to settle in Lally (2010), with a
-range of 18 to 254. Not 21.
+The reasoning: for a while after waking, thinking is slower. This sleep
+inertia typically lasts 15 to 30 minutes and can last an hour or more on
+careful measures (Hilditch & McHill 2019); in the classic imaging study, blood
+flow returned mainly to the front of the brain over the first 15 minutes
+(Balkin et al. 2002). So the decision belongs to the night before. The section
+also carries a five-point set-up routine, and says plainly that new habits
+take weeks to months: in Lally et al. (2010) the time to settle ranged from 18
+to 254 days (the top of that range extrapolated), and later reviews quote a
+median of about 66 days. Not 21.
 
 **Coffee timer.** Ticking the first step marks when you got up. The morning page
 counts down to your coffee time, by default 90 minutes and settable to 60, 90 or
-120, and the next page you open after it passes carries a one-line alert.
+120, and the next page you open after it passes carries a one-line alert. The
+wait is a ritual, not physiology: no trial was found that backs delaying the
+first coffee.
 
 ### Evening plan
 
 Two time windows, after work and night, with your own times and up to three
 "instead, I will…" plans. Inside a window the check-in stops asking how you feel
 and shows those plans as one-tap buttons, because the decision was made earlier.
-It offers **Give it 10 minutes** rather than a flat no, since urges decay. That
+It offers **Give it 10 minutes** rather than a flat no: ten minutes later you
+decide again. That
 opens a full-screen countdown with a quote, your plans underneath, and a
 continue button that unlocks after the delay. Every plan you pick counts as a
-win, with a weekly total and a day streak. "Continue anyway" sits behind a
+win, with a weekly total and no streak (see [Pause](#pause) for why). "Continue anyway" sits behind a
 ten-second countdown, so the impulsive path is a little slower than the planned
 one.
 
@@ -378,10 +382,16 @@ per-tab pass, so every new tab lands on the page again. A per-line allowlist in
 the popup exempts sites you may genuinely need, such as maps or banking.
 
 The night landing page is different by design, because a walk makes no sense at
-23:00. Instead of plans you get the **can't-sleep protocol**: one line of
-framing, then CBT-I stimulus control, keeping light low, and a built-in
-physiological-sigh breathing guide (Balban et al. 2023). It is drawn in dim
-amber on black so the screen is not itself a light source. At the bottom sit
+23:00. Instead of plans you get the **can't-sleep page**: one line of framing,
+then one rule borrowed from insomnia treatment (CBT-I stimulus control: if you
+cannot sleep, get up; it is a tested part of treatment for insomnia, with no
+evidence either way for people without it), keeping light low, and a breathing
+guide with the cyclic-sigh pattern. In the trial behind that pattern (Balban et
+al. 2023), five minutes a day for a month lifted mood a little and did not
+change sleep; one round at night was not tested. The page is drawn dim, amber
+on black: dimmer light is what the evidence supports, and the amber is for
+comfort. For insomnia itself it points to CBT-I, with a clinician or a tested
+programme. At the bottom sit
 **Give it 10 minutes**, whose only exit at night is "phone on the charger", and
 a continue that unlocks after ten seconds.
 
@@ -416,19 +426,23 @@ a "continue anyway" that unlocks after 10 to 20 seconds. Goals are flexible:
 weekends only, not after a certain time, not at work, or stop altogether.
 Outside the goal the pause runs full length; inside it, five seconds.
 
-Nothing is ever a hard block. Hard blocks get circumvented and invite
-all-or-nothing thinking.
+Nothing is ever a hard block. A block works while it is on, and many people
+take theirs down. Nobody has tested a pause against a block head to head, so
+this is offered as the smaller step that is easier to keep, not as the proven
+better one.
 
 At night the two layers run in sequence. The pause screen comes first, handling
 the urge with night-aware wording, and its continue hands over to the ten-minute
 night timer with the charger exit rather than opening the site. Only the timer's
 own continue lets you through.
 
-**Deliberately absent: streaks.** Progress is a trend, "down 40% this month", so
-one slip erases nothing. Going ahead is "went ahead", never "relapse". The next
-visit after a slip outside your goal opens with "One slip doesn't undo progress.
-What was going on?". Patterns show when and why urges happen, which is more
-actionable than a count. A six-question self-check based on the ICD-11
+**Deliberately absent: streaks**, here and in the evening plan. Progress is a
+trend, "down 40% this month", so one slip erases nothing. In experiments people
+engaged less after a broken streak, more so when they blamed themselves
+(Silverman & Barasch 2023). Going ahead is "went ahead", never "relapse". The
+next visit after a slip outside your goal opens with "One slip doesn't undo
+progress. What was going on?". Patterns show when urges happen and what you
+were feeling. A six-question self-check based on the ICD-11
 description of compulsive sexual behaviour points toward professional help when
 the score is high. It is a pointer, not a diagnosis. No "dopamine detox", no
 "reboot".

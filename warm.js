@@ -1,10 +1,10 @@
 // Kindgate — Warm screen at night
 //
 // After a set hour every page gets warmer and darker, easing in over a ramp so
-// it never snaps. Blue light late in the evening is the part of screen use that
-// most reliably pushes sleep later; this is the same trick as Night Shift, but
-// it also applies to the page itself, which Night Shift on iOS does not reach
-// with much strength.
+// it never snaps. Dimmer is the part with evidence behind it (less light from
+// the screen late in the evening); the warm colour is mostly comfort. It works
+// like Night Shift, but on the page itself, which Night Shift on iOS does not
+// reach with much strength.
 //
 // Implementation: a single fixed, click-through overlay multiplied over the
 // page. Multiply scales each colour channel, so whites become amber and blacks
