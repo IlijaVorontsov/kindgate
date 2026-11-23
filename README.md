@@ -342,6 +342,16 @@ scrolling a choice again.
 > feed stopped loading at a few weeks old. Suggested content is matched by its
 > own markers instead.
 
+### The first cleaned page
+
+The first time a cleaned feed opens (YouTube's Subscriptions or Instagram's
+home feed), a small note at the bottom of the page (bottom right on a Mac)
+says "Kindgate is on.", what is gone, what still works, and where the
+settings are. No card and no question. It fades by itself after seven seconds
+or on a tap, and never comes back. It waits for the next feed page if a
+Kindgate screen is already up. An install from before this note existed does
+not see it.
+
 ### Cue check-in
 
 Each time you open either site, at most once per 20 minutes per site, a card
@@ -709,6 +719,8 @@ pip.js/.css        Picture in Picture button and rotate-to-fullscreen
 player.js          Auto-unmute and default quality; keeps the NSDR at 1x
 media-keys.js/.css Rebindable speed, seek and fullscreen keys; one global speed
 upsell.js          Blocks the App Store banner and "open in app" nags
+firstrun.js        One quiet note on the first cleaned feed page, once
+migrate.js         One-time step: earlier installs keep the parts they had on
 popup.html/js/css  Settings and the cue summary behind the extension icon
 background.js      Status heartbeat: tells the container app the extension is on
 

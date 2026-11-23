@@ -107,6 +107,21 @@
     },
     {
       "matches": [
+        "*://www.youtube.com/*",
+        "*://m.youtube.com/*",
+        "*://youtube.com/*",
+        "*://www.instagram.com/*",
+        "*://instagram.com/*"
+      ],
+      "js": [
+        "migrate.js",
+        "firstrun.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
         "<all_urls>"
       ],
       "css": [
