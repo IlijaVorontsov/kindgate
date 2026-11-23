@@ -505,7 +505,7 @@
     + 'Simplest alternative, one action, no dates at all:\n'
     + '  Start Timer for [Shortcut Input] minutes\n'
     + '\n'
-    + 'Then put the exact shortcut name into Kindgate -> Morning -> Coffee timer.';
+    + 'Then put the exact shortcut name into Kindgate -> More help -> Morning list -> Coffee timer.';
   const copy = async (text, btn, label) => {
     try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }
     catch { prompt('Copy this:', text); }
