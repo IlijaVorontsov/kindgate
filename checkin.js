@@ -450,7 +450,7 @@
     root.appendChild(page);
     page.appendChild(el('div', 'kg-sleep-kicker', `${win.name} \u00B7 ${hhmm(new Date())}`));
     page.appendChild(el('h1', 'kg-sleep-title', 'It\u2019s late. An urge is a feeling, not an order.'));
-    page.appendChild(el('p', 'kg-sleep-sub', 'Here\u2019s what actually helps:'));
+    page.appendChild(el('p', 'kg-sleep-sub', 'Some things that may help:'));
 
     const ol = el('ol', 'kg-sleep-steps');
     for (const [h, body] of SLEEP_STEPS) {

@@ -720,7 +720,7 @@ the bundle, so they show offline.
 Every YouTube and Instagram measure is an individual toggle. For YouTube: open
 on Subscriptions, hide Shorts, hide recommendations, hide comments, no autoplay,
 the Subscriptions/You bar, the PiP button and rotate to fullscreen. For
-Instagram: open on Following, block Reels and Explore, hide suggested, hide
+Instagram: open on Following, hide Reels and Explore, hide suggested, hide
 sponsored. The site scripts read the map from a localStorage mirror, so
 document-start redirects are right from the second visit on. The mirror is in
 the sites' own storage, where the site can read it; see
