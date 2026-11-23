@@ -36,7 +36,7 @@
 
   const HOST = location.hostname.toLowerCase().replace(/^www\./, '');
   const DEFAULTS = {
-    on: true,
+    on: false,        // off until switched on in the popup (More help)
     start: '21:00',   // begin warming
     end: '07:00',     // back to normal
     warmth: 70,       // 0–100, how far towards amber
@@ -145,7 +145,10 @@
 
   function boot() {
     if (!api) { start(); return; }
-    api.get(['fgWarm']).then((d) => {
+    // An install from before the second layer was opt-in gets its settings
+    // written as they were before this reads them (migrate.js).
+    const ready = typeof kgMigrate === 'function' ? kgMigrate(api).catch(() => null) : Promise.resolve();
+    ready.then(() => api.get(['fgWarm'])).then((d) => {
       cfg = Object.assign({}, DEFAULTS, (d && d.fgWarm) || {});
       start();
     }).catch(start);

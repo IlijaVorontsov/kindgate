@@ -12,6 +12,7 @@
   },
   "background": {
     "scripts": [
+      "migrate.js",
       "background.js"
     ]
   },
@@ -56,6 +57,7 @@
         "checkin.css"
       ],
       "js": [
+        "migrate.js",
         "checkin.js"
       ],
       "run_at": "document_idle",
@@ -112,6 +114,7 @@
         "pause.css"
       ],
       "js": [
+        "migrate.js",
         "pause.js"
       ],
       "run_at": "document_start",
@@ -126,6 +129,7 @@
         "warm.css"
       ],
       "js": [
+        "migrate.js",
         "warm.js"
       ],
       "run_at": "document_start",

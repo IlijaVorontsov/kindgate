@@ -44,12 +44,27 @@ no, it asks a question and leaves the choice with you.
 | --- | --- |
 | **YouTube, subscriptions only** | Opens on Subscriptions. No Home feed, no Shorts, no recommendations, no autoplay. Search, channels and playlists keep working. |
 | **Instagram, people you follow** | Locked to the Following feed. Reels, Explore, suggested posts and sponsored posts are gone. |
-| **A check-in, not a block** | Every so often a card asks what you were feeling ten seconds ago. One tap logs it. No verdict. |
-| **Morning sequence** | For the first half hour after waking, a feed shows your own morning steps instead. Nothing to decide. |
-| **Warm screen at night** | After your set hour every page eases toward candlelight. Contrast survives, layouts never break. |
-| **Pause screen** | On sites you list, friction rather than a wall: breathing, a question, your pre-set alternative, and a countdown on "continue anyway". |
 | **Media keys on a Mac** | On any video: Q toggles 1× and your speed, W / E slower / faster by 0.1×, A fullscreen, S / D back / forward 10 s (QWERTY positions; Q W F A R S on Colemak). Every key can be changed, and the speed carries over to every tab. |
+
+**More help, when you want it.** Six parts for evenings, nights, mornings and
+single sites. Each is off after install until you switch it on in the popup,
+and none of them blocks: "continue anyway" is always there.
+
+| | |
+| --- | --- |
+| **A check-in, not a block** | Every so often a card asks what you were feeling ten seconds ago. One tap logs it. No verdict. |
+| **Evening plan** | After work, opening a feed shows three things you decided earlier, one tap each. |
+| **Night page** | At night every site first lands on a dim page with a ten-minute timer. |
+| **Warm screen at night** | After your set hour every page eases toward candlelight. Contrast survives, layouts never break. |
+| **Morning sequence** | For the first half hour after waking, a feed shows your own morning steps instead. Nothing to decide. |
+| **Pause screen** | On sites you list, friction rather than a wall: breathing, a question, your pre-set alternative, and a countdown on "continue anyway". |
 | **Hands off to Shortcuts** | Any button can run a shortcut of yours. Timers, reminders, whatever you already trust. |
+
+**After an update.** An install from before these parts became opt-in keeps
+what it had. Once, on the first start after the update, every part that was
+never switched off is written into storage as on, so nothing changes for
+that install; a part that was switched off stays off. A fresh install is told
+apart by its empty storage (`migrate.js`).
 
 > [!IMPORTANT]
 > A Safari extension only affects Safari. It does nothing inside the YouTube or
@@ -262,8 +277,10 @@ app removes it.
 ### What runs on every website
 
 Four scripts are allowed on all sites, because night mode, the pause and the
-warm screen have to work wherever you are. Nothing but the code limits them,
-so this is what each one does there:
+warm screen have to work wherever you are. All three are off after install;
+until one is switched on, its script reads its switch from storage and stops.
+(The video keys are on, on a Mac.) Nothing but the code limits them, so this
+is what each one does there:
 
 - `checkin.js` checks the time against your windows and, at night, draws the
   night page. It reads the page's host name to apply your allow-list and
@@ -332,9 +349,9 @@ something specific. The card closes on that single tap, and a toast then shows
 your pattern for the week with a **Leave instead** button before fading by
 itself.
 
-The card can be switched off at the top of Check-in & cues in the popup. It is
-on by default. Off stops only this daytime card: the morning, after-work and
-night windows have their own switches, and the log and its summary stay.
+The card is off after install and has its own switch in the popup. Off stops
+only this daytime card: the morning, after-work and night windows have their
+own switches, and the log and its summary stay.
 
 Tapping the extension's icon in Safari, from the "aA" menu in the address bar,
 opens the full breakdown by feeling, site, hour and weekday, and the export and
@@ -342,8 +359,9 @@ clear controls.
 
 ### Morning
 
-A morning window, by default 06:00 to 08:30, in which opening a feed shows your
-three pre-set steps instead. No question, nothing to decide.
+A morning window, off after install and 06:00 to 08:30 once switched on unless
+you change it, in which opening a feed shows your pre-set steps instead. No
+question, nothing to decide.
 
 The reasoning: for a while after waking, thinking is slower. This sleep
 inertia typically lasts 15 to 30 minutes and can last an hour or more on
@@ -363,7 +381,8 @@ first coffee.
 
 ### Evening plan
 
-Two time windows, after work and night, with your own times and up to three
+Two time windows, after work and night, each off after install, with your own
+times and up to three
 "instead, I will…" plans. Inside a window the check-in stops asking how you feel
 and shows those plans as one-tap buttons, because the decision was made earlier.
 It offers **Give it 10 minutes** rather than a flat no: ten minutes later you
@@ -376,7 +395,8 @@ one.
 
 ### Night
 
-Night mode covers **every website**, not just YouTube and Instagram. Inside the
+Night mode is off after install. Once switched on it covers **every website**,
+not just YouTube and Instagram. Inside the
 night window any site opened in Safari lands on the can't-sleep page, sharing
 one ten-minute timer. "Continue anyway" clears only the tab it was tapped in, a
 per-tab pass, so every new tab lands on the page again. A per-line allowlist in
@@ -403,14 +423,16 @@ media-key speed, and starts by itself where iOS allows; where it does not, one
 large "Tap to start" button appears. Set your own link in the popup to replace
 it.
 
-**Warm screen.** After your set hour every page eases toward candlelight. The
+**Warm screen.** Off after install. Once switched on, every page eases toward
+candlelight after your set hour (21:00 to 07:00 unless you change it). The
 overlay multiplies rather than washing the page out, so text contrast survives
 and no layout breaks.
 
 ### Pause
 
-Friction, not a wall, on sites you list. The default list covers common adult
-sites; it takes words or domains and is editable in the popup.
+Friction, not a wall, on sites you list. Off after install. Once switched on
+with an empty list, it uses a short built-in list of common adult sites; the
+list takes words or domains and is editable in the popup.
 
 Three ready-made lists can be switched on next to it: adult sites (about 48,000
 domains), social feeds (Facebook, Instagram, TikTok, X, Reddit and the like,

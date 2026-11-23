@@ -61,4 +61,13 @@
   });
 
   alive();
+
+  // The one-time settings step (migrate.js), as soon as the extension starts,
+  // so an install from before the second layer was opt-in keeps what it had.
+  // The popup and the content scripts run it too, whichever comes first.
+  try {
+    const store = (typeof browser !== 'undefined' && browser.storage) ? browser.storage.local
+                : (typeof chrome !== 'undefined' && chrome.storage) ? chrome.storage.local : null;
+    if (store && typeof kgMigrate === 'function') kgMigrate(store).catch(() => {});
+  } catch (e) { /* the next caller tries again */ }
 })();

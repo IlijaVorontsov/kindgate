@@ -4,7 +4,7 @@
 //
 //  * Outside your windows: "what were you feeling ten seconds ago?" — one tap
 //    to log the cue, then a toast with the week's pattern. Noticing, no verdict.
-//    Can be switched off in the popup (fgCheckinOn).
+//    Off until switched on in the popup, under More help (fgCheckinOn).
 //
 //  * Inside a window (after work, night): the decision was made earlier, so the
 //    card doesn't ask you to decide — it shows the plans you set, one tap each
@@ -36,10 +36,12 @@
   ];
   const LABEL = Object.fromEntries(CUES);
 
+  // All three are off until switched on in the popup. Installs from before
+  // that change had them on; migrate.js writes that into storage for them.
   const DEFAULT_WINDOWS = {
-    morning: { on: true, start: '06:00', end: '08:30', name: 'Morning window' },
-    work:    { on: true, start: '17:30', end: '20:00', name: 'After-work window' },
-    night:   { on: true, start: '21:30', end: '06:00', name: 'Night window' },
+    morning: { on: false, start: '06:00', end: '08:30', name: 'Morning window' },
+    work:    { on: false, start: '17:30', end: '20:00', name: 'After-work window' },
+    night:   { on: false, start: '21:30', end: '06:00', name: 'Night window' },
   };
   const DEFAULT_MORNING_STEPS = [
     { label: 'Step out of bed', url: '' },
@@ -902,6 +904,7 @@
   }
 
   async function run() {
+    if (api && typeof kgMigrate === 'function') { try { await kgMigrate(api); } catch { /* run on what is stored */ } }
     const pre = await load(['fgWindows', 'fgNightAllow', 'fgNsdrPassUntil', 'fgMorningProgress', 'fgCoffeeAck', 'fgCoffeeDelay']);
     maybeCoffeeAlert(pre).catch(() => { /* a missed coffee toast is not worth stopping the check-in */ });
     // YouTube serves this recording at /live/<id> on mobile, not /watch?v=<id>,
@@ -921,9 +924,9 @@
     if (night) { LAST = 'fgLast_night'; SNOOZE = 'fgSnooze_night'; }
     const data = await load(['fgCues', 'fgWins', 'fgPlans', 'fgMorningSteps', 'fgMorningProgress', 'fgCoffeeDelay', 'fgShortcutName', 'fgNsdrUrl', 'fgClaudeOn', 'fgCheckinOn', LAST, SNOOZE]);
     data.fgWindows = pre.fgWindows;
-    // The daytime card has its own switch in the popup, on unless switched off.
+    // The daytime card has its own switch in the popup, off until switched on.
     // The windows are not its business: each has a switch of its own.
-    if (!win && data.fgCheckinOn === false) return;
+    if (!win && data.fgCheckinOn !== true) return;
     const snoozed = Number(data[SNOOZE] || 0) > Date.now();
     // In a window the card shows on every open (a snoozed return included);
     // outside one the normal 20-minute cooldown applies.

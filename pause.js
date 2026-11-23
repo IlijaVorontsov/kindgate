@@ -145,8 +145,8 @@
   // ---- night window (same rule as checkin.js) --------------------------------------------
   const winMin = (hhmm) => { const [h, m] = String(hhmm || '0:0').split(':').map(Number); return (h * 60 + (m || 0)) % 1440; };
   function isNightNow(windows) {
-    const w = (windows && windows.night) || { on: true, start: '21:30', end: '06:00' };
-    if (w.on === false) return false;
+    const w = (windows && windows.night) || { on: false, start: '21:30', end: '06:00' };
+    if (w.on !== true) return false;
     const d = new Date(), t = d.getHours() * 60 + d.getMinutes(), a = winMin(w.start), b = winMin(w.end);
     return a <= b ? (t >= a && t < b) : (t >= a || t < b);
   }
@@ -495,8 +495,11 @@
   };
 
   async function start() {
+    // Off until switched on. An install from before that change gets its
+    // settings written as they were before this reads them (migrate.js).
+    if (api && typeof kgMigrate === 'function') { try { await kgMigrate(api); } catch { /* run on what is stored */ } }
     const data = await load(['fgPauseOn', 'fgPauseSites', 'fgPauseLists', 'fgPauseSeconds', 'fgPauseGoal', 'fgPauseAlts', 'fgPauseLog', 'fgPauseLast', 'fgClaudeOn', 'fgWindows']);
-    if (data.fgPauseOn === false) { unveil(); return; }
+    if (data.fgPauseOn !== true) { unveil(); return; }
     if (!matches(data.fgPauseSites) && !(await inList(data.fgPauseLists))) { unveil(); return; }
     // A short grace after "continue anyway", so navigating within the site
     // doesn't re-pause every page.

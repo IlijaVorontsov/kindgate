@@ -8,7 +8,15 @@
   const SITE = { youtube: 'YouTube', instagram: 'Instagram' };
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-  const api = (typeof browser !== 'undefined' ? browser : chrome).storage.local;
+  // Every read and write waits for the one-time settings step (migrate.js),
+  // so an install from before the second layer was opt-in is shown as it was.
+  const rawApi = (typeof browser !== 'undefined' ? browser : chrome).storage.local;
+  const ready = (typeof kgMigrate === 'function' ? kgMigrate(rawApi) : Promise.resolve()).catch(() => null);
+  const api = {
+    get: (keys) => ready.then(() => rawApi.get(keys)),
+    set: (obj) => ready.then(() => rawApi.set(obj)),
+    remove: (keys) => ready.then(() => rawApi.remove(keys)),
+  };
   const $ = (id) => document.getElementById(id);
   // The Mac, not an iPad with a trackpad (which also reports MacIntel, but has
   // touch points): hide the options that only make sense on iPhone and iPad.
@@ -121,9 +129,9 @@
   api.get(['fgBlockUpsell']).then((d) => { blockupsell.checked = !(d && d.fgBlockUpsell === false); });
   blockupsell.addEventListener('change', () => api.set({ fgBlockUpsell: blockupsell.checked }));
 
-  // Daytime check-in card: on unless switched off, like the pause.
+  // Daytime check-in card: off until switched on, like the rest of More help.
   const checkinOn = $('checkinOn');
-  api.get(['fgCheckinOn']).then((d) => { checkinOn.checked = !(d && d.fgCheckinOn === false); });
+  api.get(['fgCheckinOn']).then((d) => { checkinOn.checked = !!(d && d.fgCheckinOn === true); });
   checkinOn.addEventListener('change', () => api.set({ fgCheckinOn: checkinOn.checked }));
 
   const hidethumbs = $('hidethumbs');
@@ -132,7 +140,7 @@
   quality.addEventListener('change', () => api.set({ fgQuality: quality.value }));
 
   // Evening plan: windows, plans, wins
-  const DEF_WIN = { work: { on: true, start: '17:30', end: '20:00' }, night: { on: true, start: '21:30', end: '06:00' } };
+  const DEF_WIN = { work: { on: false, start: '17:30', end: '20:00' }, night: { on: false, start: '21:30', end: '06:00' } };
   const DEF_PLANS = [{ label: '20-minute walk', url: '' }, { label: 'Cook something', url: '' }, { label: 'Read', url: '' }];
   const wEls = { workOn: $('workOn'), workStart: $('workStart'), workEnd: $('workEnd'),
                  nightOn: $('nightOn'), nightStart: $('nightStart'), nightEnd: $('nightEnd') };
@@ -152,8 +160,8 @@
   }
   api.get(['fgWindows', 'fgPlans', 'fgWins']).then((d) => {
     const w = Object.assign({}, DEF_WIN, d && d.fgWindows || {});
-    wEls.workOn.checked = w.work.on !== false;  wEls.workStart.value = w.work.start;  wEls.workEnd.value = w.work.end;
-    wEls.nightOn.checked = w.night.on !== false; wEls.nightStart.value = w.night.start; wEls.nightEnd.value = w.night.end;
+    wEls.workOn.checked = w.work.on === true;  wEls.workStart.value = w.work.start || DEF_WIN.work.start;  wEls.workEnd.value = w.work.end || DEF_WIN.work.end;
+    wEls.nightOn.checked = w.night.on === true; wEls.nightStart.value = w.night.start || DEF_WIN.night.start; wEls.nightEnd.value = w.night.end || DEF_WIN.night.end;
     const plans = (d && Array.isArray(d.fgPlans) && d.fgPlans.length) ? d.fgPlans : DEF_PLANS;
     pEls.forEach((p, i) => { p.label.value = (plans[i] && plans[i].label) || ''; p.url.value = (plans[i] && plans[i].url) || ''; });
     const wins = (d && Array.isArray(d.fgWins)) ? d.fgWins : [];
@@ -167,7 +175,7 @@
   nightAllow.addEventListener('change', () => api.set({ fgNightAllow: nightAllow.value.split(/\n+/).map((s) => s.trim()).filter(Boolean) }));
 
   // ---- warm screen at night ----------------------------------------------------
-  const DEF_WARM = { on: true, start: '21:00', end: '07:00', warmth: 70, dim: 20, ramp: 60, skip: [] };
+  const DEF_WARM = { on: false, start: '21:00', end: '07:00', warmth: 70, dim: 20, ramp: 60, skip: [] };
   const warmEls = { on: $('warmOn'), start: $('warmStart'), end: $('warmEnd'), warmth: $('warmth'), dim: $('warmDim'), ramp: $('warmRamp'), skip: $('warmSkip') };
   // A stored strength may sit between the options offered; show the nearest one
   // rather than silently falling back to the first.
@@ -178,7 +186,7 @@
   }
   api.get(['fgWarm']).then((d) => {
     const w = Object.assign({}, DEF_WARM, (d && d.fgWarm) || {});
-    warmEls.on.checked = w.on !== false;
+    warmEls.on.checked = w.on === true;
     warmEls.start.value = w.start; warmEls.end.value = w.end;
     nearestOption(warmEls.warmth, w.warmth);
     nearestOption(warmEls.dim, w.dim);
@@ -207,7 +215,7 @@
       const w = Object.assign({}, DEF_WIN, d && d.fgWindows || {});
       const toMin = (s) => { const [h, m] = String(s || '0:0').split(':').map(Number); return (h * 60 + (m || 0)) % 1440; };
       const now = new Date(), t = now.getHours() * 60 + now.getMinutes();
-      const inW = (x) => { if (!x || x.on === false) return false; const a = toMin(x.start), b = toMin(x.end); return a <= b ? (t >= a && t < b) : (t >= a || t < b); };
+      const inW = (x) => { if (!x || x.on !== true) return false; const a = toMin(x.start), b = toMin(x.end); return a <= b ? (t >= a && t < b) : (t >= a || t < b); };
       const active = inW(w.night) ? 'Night window is active now' : inW(w.work) ? 'After-work window is active now' : 'No window active right now';
       const last = d && d.fgWindowShownAt ? `Last shown: ${new Date(d.fgWindowShownAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })} (${d.fgWindowShownKey === 'night' ? 'night' : 'after work'})` : 'Not shown yet on this device';
       $('winStatus').textContent = `${active}. ${last}. If a window is active but pages aren\u2019t appearing, check Settings \u2192 Apps \u2192 Safari \u2192 Extensions \u2192 Kindgate: on, and Other Websites \u2192 Allow.`;
@@ -350,7 +358,7 @@
   const listIds = { adult: 'listAdult', social: 'listSocial', gambling: 'listGambling' };
   function saveLists() { const o = {}; for (const k in listIds) o[k] = gm(listIds[k]).checked; api.set({ fgPauseLists: o }); }
   api.get(['fgPauseOn', 'fgPauseSites', 'fgPauseLists', 'fgPauseSeconds', 'fgPauseGoal', 'fgPauseAlts', 'fgPauseLog', 'fgPausePin']).then(async (d) => {
-    gm('pauseOn').checked = !(d && d.fgPauseOn === false);
+    gm('pauseOn').checked = !!(d && d.fgPauseOn === true);
     gm('pauseSites').value = ((d && d.fgPauseSites) || []).join('\n');
     const lists = (d && d.fgPauseLists) || {}; for (const k in listIds) gm(listIds[k]).checked = lists[k] === true;
     gm('pauseSeconds').value = String((d && d.fgPauseSeconds) || 15);
@@ -556,18 +564,18 @@
   }
   function morningStatus() {
     api.get(['fgWindows', 'fgWins']).then((d) => {
-      const w = Object.assign({ on: true, start: '06:00', end: '08:30' }, (d && d.fgWindows && d.fgWindows.morning) || {});
+      const w = Object.assign({ on: false, start: '06:00', end: '08:30' }, (d && d.fgWindows && d.fgWindows.morning) || {});
       const wins = (d && Array.isArray(d.fgWins)) ? d.fgWins : [];
       const since = Date.now() - WEEK_MS;
       const kept = new Set(wins.filter((x) => x.t >= since && x.window === 'morning').map((x) => new Date(x.t).toDateString())).size;
-      $('morningStatus').textContent = w.on === false
+      $('morningStatus').textContent = w.on !== true
         ? 'Morning window is off.'
         : `Morning window ${w.start}\u2013${w.end}. ` + (kept ? `Kept ${kept} of the last 7 mornings.` : 'Nothing logged yet \u2014 no streak to break.');
     });
   }
   api.get(['fgWindows', 'fgMorningSteps', 'fgMorningSetup']).then((d) => {
-    const w = Object.assign({ on: true, start: '06:00', end: '08:30' }, (d && d.fgWindows && d.fgWindows.morning) || {});
-    mEls.on.checked = w.on !== false; mEls.start.value = w.start; mEls.end.value = w.end;
+    const w = Object.assign({ on: false, start: '06:00', end: '08:30' }, (d && d.fgWindows && d.fgWindows.morning) || {});
+    mEls.on.checked = w.on === true; mEls.start.value = w.start; mEls.end.value = w.end;
     const st = (d && Array.isArray(d.fgMorningSteps) && d.fgMorningSteps.length) ? d.fgMorningSteps : DEFAULT_MSTEPS;
     msEls.forEach((p, i) => { p.label.value = (st[i] && st[i].label) || ''; p.url.value = (st[i] && st[i].url) || ''; });
     const setup = (d && d.fgMorningSetup) || {};
