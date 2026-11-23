@@ -47,7 +47,8 @@ no, it asks a question and leaves the choice with you.
 | **Media keys on a Mac** | On any video: Q toggles 1× and your speed, W / E slower / faster by 0.1×, A fullscreen, S / D back / forward 10 s (QWERTY positions; Q W F A R S on Colemak). Every key can be changed, and the speed carries over to every tab. |
 
 **More help, when you want it.** Six parts for evenings, nights, mornings and
-single sites. Each is off after install until you switch it on in the popup,
+single sites. Each is off after install until you switch it on in the popup
+under **More help**,
 and none of them blocks: "continue anyway" is always there.
 
 | | |
@@ -225,9 +226,10 @@ things kept elsewhere on the device are listed under
 - The wins log records the time, the plan you tapped, the window, and
   `youtube`, `instagram` or `other`. Never a URL, never a hostname.
 - Each of the three logs can be copied out as JSON or cleared from the popup:
-  the cue log under Check-in & cues, the wins log under Evening plan, the pause
-  log under Pause › Patterns (behind the PIN, if one is set).
-- The self-check under Pause › Check in with yourself keeps its last result (a
+  the cue log under More help › Check-in, the wins log under More help ›
+  Evening plan, the pause log under More help › Pause › Patterns (behind the
+  PIN, if one is set).
+- The self-check under More help › Pause › Check in with yourself keeps its last result (a
   score and the date, not the answers). The section shows when one is saved,
   and "Clear result" next to it deletes it.
 - The pause section can be locked with a PIN, hashed with PBKDF2 and salted per
@@ -349,13 +351,14 @@ something specific. The card closes on that single tap, and a toast then shows
 your pattern for the week with a **Leave instead** button before fading by
 itself.
 
-The card is off after install and has its own switch in the popup. Off stops
+The card is off after install; its switch is under More help › Check-in in the
+popup. Off stops
 only this daytime card: the morning, after-work and night windows have their
 own switches, and the log and its summary stay.
 
-Tapping the extension's icon in Safari, from the "aA" menu in the address bar,
-opens the full breakdown by feeling, site, hour and weekday, and the export and
-clear controls.
+In the popup (the extension's icon in Safari, from the "aA" menu in the address
+bar), More help › Check-in › "Your week, by feeling" opens the full breakdown
+by feeling, site, hour and weekday, and the export and clear controls.
 
 ### Morning
 
@@ -509,7 +512,7 @@ the letter they type, so the same physical keys work on any layout:
 | S / D | R / S | Back / forward 10 seconds |
 
 Every key, the speed step (0.05× to 0.5×) and the jump (5 to 30 s) can be
-changed in the popup under **Media keys**: click an action and press the key you
+changed in the popup under **Video keys › Adjust**: click an action and press the key you
 want. Esc cancels, Delete leaves the action without a key, and a key already in
 use moves to the new action.
 
@@ -518,8 +521,8 @@ to every video in every tab and window, to videos that load later, and after
 Safari restarts. Q switches between 1× and that speed. Until you first press a speed key, videos
 play at whatever the site chooses.
 
-Without a keyboard (on the iPhone, say), the popup's **Speed for every video**
-row under Media keys shows the current speed and changes it with −, 1× and +,
+Without a keyboard (on the iPhone, say), the popup's **Video speed** row, on
+its first screen, shows the current speed and changes it with −, 1× and +,
 in the same steps as the keys; 1× switches back to the speed before, like Q.
 
 It is a starting speed, not a lock. Each video starts at it, and so does every
@@ -530,7 +533,7 @@ tap or key of yours behind it set back; a site that keeps forcing its own speed
 is left alone on that video after a few tries.
 
 **Carry speed changes from the player over to all videos** (in the popup under
-Media keys, off by default) makes a speed you pick in any player's own menu
+the video row's Adjust, off by default) makes a speed you pick in any player's own menu
 the global speed, as if you had used the keys. This works on the iPhone too,
 where there are no keys. Only your own changes count: one that follows a tap,
 click or key of yours, or that you make in Safari's own fullscreen player.
@@ -546,7 +549,8 @@ uses the site's own button when there is one (YouTube, Twitch, Vimeo and the
 common player libraries), so its controls and subtitles stay. On Netflix, S and
 D are left to Netflix's own arrow keys, because its player breaks when the
 position is set from outside. Videos inside an embedded player answer once you
-have clicked into that player. Turn it off under Media keys in the popup.
+have clicked into that player. Turn it off with the Video keys switch in the
+popup (on the iPhone and iPad: under Video speed › Adjust).
 
 ### "Open in app" prompts
 
@@ -652,9 +656,27 @@ shown. Inside Safari nothing is different.
 
 ### The popup
 
-Grouped into collapsible categories, Check-in & cues, Evening plan, Pause,
-YouTube & feeds, Safari & privacy, and About, with sub-sections inside the
-larger ones. Which sections are open is remembered.
+Two levels. The first is the feeds and nothing else: a card for YouTube and
+one for Instagram, each with one switch and a count ("9 of 9 on") that opens
+the individual switches under **Adjust**; the video speed row on the iPhone,
+or the video keys on a Mac; and one door, **More help**. Below them sit
+links to Your data (the Claude hand-off, what is stored where, your own
+shortcuts), the privacy policy, support and About.
+
+A site's one switch turns all its measures off and remembers which were on;
+switched on again, it brings that set back.
+
+**More help** opens the second level: the check-in, the evening plan, the
+night page, the warm screen, the morning list and the pause, each with one
+switch, one sentence on what it does and, for the three that act on every
+website, a "works on every website" label. Each one's settings open in place
+under it. When parts are on, the door says how many and which. The PIN, if
+set, also holds the pause's switch until it is entered.
+
+After the update from an earlier version, the popup says once, at the top,
+that the layout is new and nothing was switched off, and names what is on,
+with **Show me** (opens More help) and **OK**. Which panels are open is
+remembered; the popup always opens on the first level.
 
 About links the privacy policy and the support page, which open in a tab, and
 lists the open source licences. The font and list licence texts are read from

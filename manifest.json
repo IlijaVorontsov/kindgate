@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Kindgate",
   "version": "6.3",
-  "description": "YouTube without Shorts or the Home feed; Instagram limited to the accounts you follow; plus a one-tap cue check-in on every open (Safari); plus a warm, dimmed screen at night; plus speed and seek keys for any video on a keyboard.",
+  "description": "YouTube without Shorts or the Home feed and Instagram limited to the accounts you follow, in Safari. Speed and seek keys for any video on a keyboard. More help for evenings, nights and mornings, off until you switch it on.",
   "icons": {
     "48": "images/icon-48.png",
     "96": "images/icon-96.png",
@@ -159,7 +159,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Kindgate — your cues",
+    "default_title": "Kindgate",
     "default_icon": {
       "16": "images/icon-16.png",
       "32": "images/icon-32.png",

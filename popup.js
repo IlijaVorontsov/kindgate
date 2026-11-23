@@ -370,7 +370,8 @@
     insights(Array.isArray(d && d.fgPauseLog) ? d.fgPauseLog : []);
     const pin = (d && d.fgPausePin) || '';
     gm('pinClear').hidden = !pin;
-    if (pin) { gm('pinGate').hidden = false; gm('pauseBody').hidden = true; }
+    // Locked: the switch in the card's head waits for the PIN too.
+    if (pin) { gm('pinGate').hidden = false; gm('pauseBody').hidden = true; gm('pauseOn').disabled = true; }
   });
   gm('pauseOn').addEventListener('change', () => api.set({ fgPauseOn: gm('pauseOn').checked }));
   gm('pauseSites').addEventListener('change', () => api.set({ fgPauseSites: gm('pauseSites').value.split(/\n+/).map((s) => s.trim()).filter(Boolean) }));
@@ -401,7 +402,7 @@
         wrongTries = 0;
         gm('pinEntry').value = '';
         gm('pinWrong').hidden = true;
-        gm('pinGate').hidden = true; gm('pauseBody').hidden = false;
+        gm('pinGate').hidden = true; gm('pauseBody').hidden = false; gm('pauseOn').disabled = false;
         // Set under the old scheme: re-store it salted now that we have the PIN.
         if (typeof d.fgPausePin === 'string') await api.set({ fgPausePin: await makePin(entered) });
         return;
@@ -671,28 +672,33 @@
   // ---- The global video speed: see it and change it without a keyboard ----
   // Same value, steps and range as the media keys (media-keys.js picks the
   // change up from storage and starts every video at it); handy on iPhone.
-  const mkRate = $('mkRate');
+  // Drawn twice: on the iPhone's first level, and in the Mac's Adjust panel.
+  const rateEls = [...document.querySelectorAll('[data-rate]')];
   let speedNow = null, speedPrev = null, speedSeq = 0;
   const fmtSpeed = (r) => `${Number(r.toFixed(2))}×`;
   const speedClamp = (r) => Math.min(16, Math.max(0.1, r));
   const speedStep = (r) => speedClamp(Number((Math.round(r / mk.step) * mk.step).toFixed(2)));
   const speedShow = () => {
-    mkRate.textContent = speedNow == null ? 'Not set: videos play at the site’s own speed' : `Now ${fmtSpeed(speedNow)}`;
+    const text = speedNow == null ? 'Not set: videos play at the site’s own speed' : `${fmtSpeed(speedNow)} on every video`;
+    for (const el of rateEls) el.textContent = text;
   };
   const speedSet = (r) => {
     speedNow = r;
     speedShow();
     api.set({ fgMediaRate: r, fgMediaPrevRate: speedPrev, fgMediaRateFrom: `popup:${Date.now()}:${++speedSeq}` });
   };
-  $('mkSlower').addEventListener('click', () => speedSet(speedStep((speedNow || 1) - mk.step)));
-  $('mkFaster').addEventListener('click', () => speedSet(speedStep((speedNow || 1) + mk.step)));
-  // 1×, and from 1× back to the speed before, like Q.
-  $('mkNormal').addEventListener('click', () => {
-    const cur = speedNow || 1;
-    if (Math.abs(cur - 1) >= 0.005) { speedPrev = cur; speedSet(1); }
-    else if (speedPrev && Math.abs(speedPrev - 1) >= 0.005) speedSet(speedPrev);
-    else speedSet(1);
-  });
+  const SPEED_ACTIONS = {
+    slower: () => speedSet(speedStep((speedNow || 1) - mk.step)),
+    faster: () => speedSet(speedStep((speedNow || 1) + mk.step)),
+    // 1×, and from 1× back to the speed before, like Q.
+    normal: () => {
+      const cur = speedNow || 1;
+      if (Math.abs(cur - 1) >= 0.005) { speedPrev = cur; speedSet(1); }
+      else if (speedPrev && Math.abs(speedPrev - 1) >= 0.005) speedSet(speedPrev);
+      else speedSet(1);
+    },
+  };
+  for (const b of document.querySelectorAll('button[data-speed]')) b.addEventListener('click', () => SPEED_ACTIONS[b.dataset.speed]());
   api.get(['fgMediaRate', 'fgMediaPrevRate']).then((d) => {
     speedNow = d && Number(d.fgMediaRate) ? speedClamp(Number(d.fgMediaRate)) : null;
     speedPrev = d && Number(d.fgMediaPrevRate) ? Number(d.fgMediaPrevRate) : null;
@@ -717,18 +723,125 @@
 
   const FEATURE_DEFAULTS = { ytHome: true, ytShorts: true, ytRelated: true, ytComments: true, ytAutoplay: true, ytTabBar: true, ytPip: true, ytRotate: true, ytGuide: true, igFollowing: true, igReels: true, igSuggested: true, igAds: true, igCheckpoint: true, mediaKeys: true, speedCarry: false };
   const featureBoxes = [...document.querySelectorAll('input[data-feature]')];
+  // The switches a site's card counts and its one switch turns off and on:
+  // the visible ones in that site's Adjust panel (the iPhone player switches
+  // are hidden on the Mac, so they do not count there).
+  const onMac = document.documentElement.classList.contains('kg-mac');
+  const siteBoxes = (site) => featureBoxes.filter((b) => b.closest('#adj-' + (site === 'yt' ? 'youtube' : 'instagram')) && !(onMac && b.closest('.ios-only')));
+  function showSites() {
+    for (const site of ['yt', 'ig']) {
+      const boxes = siteBoxes(site), on = boxes.filter((b) => b.checked).length;
+      $(site + 'Count').textContent = `${on} of ${boxes.length} on`;
+      $(site + 'Master').checked = on > 0;
+    }
+  }
+  function saveFeatures(extra) {
+    return api.get(['fgFeatures']).then((d) => {
+      const f = Object.assign({}, (d && d.fgFeatures) || {}, extra || {});
+      for (const x of featureBoxes) f[x.dataset.feature] = x.checked;
+      f.igCheckpointEvery = Number(igEvery.value) || 15;   // not a checkbox; don't drop it
+      return api.set({ fgFeatures: f });
+    });
+  }
   api.get(['fgFeatures']).then((d) => {
     const f = Object.assign({}, FEATURE_DEFAULTS, (d && d.fgFeatures) || {});
     for (const b of featureBoxes) b.checked = f[b.dataset.feature] !== false;
+    showSites();
   });
   for (const b of featureBoxes) b.addEventListener('change', () => {
+    // A switch drawn twice (the Mac's video keys) moves with its twin.
+    for (const x of featureBoxes) if (x !== b && x.dataset.feature === b.dataset.feature) x.checked = b.checked;
+    showSites();
+    saveFeatures();
+  });
+  // A site's one switch: off turns all its measures off and remembers which
+  // were on; on brings that set back (or all of them, if none was saved).
+  for (const site of ['yt', 'ig']) $(site + 'Master').addEventListener('change', (e) => {
+    const boxes = siteBoxes(site), key = site + 'Saved';
     api.get(['fgFeatures']).then((d) => {
-      const f = Object.assign({}, (d && d.fgFeatures) || {});
-      for (const x of featureBoxes) f[x.dataset.feature] = x.checked;
-      f.igCheckpointEvery = Number(igEvery.value) || 15;   // not a checkbox; don't drop it
-      api.set({ fgFeatures: f });
+      const f = (d && d.fgFeatures) || {}, extra = {};
+      if (e.target.checked) {
+        const saved = Array.isArray(f[key]) && f[key].length ? f[key] : boxes.map((b) => b.dataset.feature);
+        for (const b of boxes) b.checked = saved.includes(b.dataset.feature);
+      } else {
+        extra[key] = boxes.filter((b) => b.checked).map((b) => b.dataset.feature);
+        for (const b of boxes) b.checked = false;
+      }
+      showSites();
+      return saveFeatures(extra);
     });
   });
+
+  // ---- Two levels: the feeds, and one door to More help ----------------------
+  // Level 2 holds the six optional parts. Everything that belongs to them lives
+  // inside #lvl-more, so a later version can replace that section alone.
+  const lvlFeeds = $('lvl-feeds'), lvlMore = $('lvl-more');
+  function showLevel(more) {
+    lvlFeeds.hidden = more; lvlMore.hidden = !more;
+    document.body.scrollTop = 0;
+    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+    try { (more ? $('doorBack') : $('doorOpen')).focus({ preventScroll: true }); } catch { /* ignore */ }
+  }
+  $('doorOpen').addEventListener('click', () => showLevel(true));
+  $('doorBack').addEventListener('click', () => showLevel(false));
+  for (const b of document.querySelectorAll('button[data-open]')) b.addEventListener('click', () => {
+    const dt = $(b.dataset.open);
+    dt.open = true;
+    dt.scrollIntoView({ block: 'start' });
+  });
+
+  const HELP = [
+    ['checkin', 'Check-in', 'check-in'], ['evening', 'Evening plan', 'evening plan'], ['night', 'Night page', 'night page'],
+    ['warm', 'Warm screen', 'warm screen'], ['morning', 'Morning list', 'morning list'], ['pause', 'Pause', 'pause'],
+  ];
+  const HELP_KEYS = ['fgCheckinOn', 'fgWindows', 'fgWarm', 'fgPauseOn', 'fgPauseSites', 'fgPauseLists', 'fgNightAllow'];
+  // For each part: false when off, else one line on what it is set to.
+  function helpState(d) {
+    const w = d.fgWindows || {}, warm = d.fgWarm || {};
+    const span = (x, a, b) => `${(x && x.start) || a} to ${(x && x.end) || b}`;
+    const allow = Array.isArray(d.fgNightAllow) ? d.fgNightAllow.length : 0;
+    const sites = Array.isArray(d.fgPauseSites) ? d.fgPauseSites.length : 0;
+    const lists = Object.values(d.fgPauseLists || {}).filter((v) => v === true).length;
+    const plural = (n, one) => `${n} ${one}${n === 1 ? '' : 's'}`;
+    return {
+      checkin: d.fgCheckinOn === true && 'At most every 20 minutes per site',
+      evening: !!w.work && w.work.on === true && span(w.work, '17:30', '20:00'),
+      night: !!w.night && w.night.on === true && span(w.night, '21:30', '06:00') + (allow ? ` · ${plural(allow, 'site')} always open` : ''),
+      warm: warm.on === true && span(warm, '21:00', '07:00'),
+      morning: !!w.morning && w.morning.on === true && span(w.morning, '06:00', '08:30'),
+      pause: d.fgPauseOn === true && ([sites && `${sites} on your list`, lists && plural(lists, 'ready-made list')].filter(Boolean).join(' · ') || 'The built-in list'),
+    };
+  }
+  function refreshHelp() {
+    return api.get(HELP_KEYS).then((d) => {
+      const st = helpState(d || {});
+      const on = HELP.filter(([k]) => st[k]);
+      for (const [k] of HELP) { const el = document.querySelector(`[data-state="${k}"]`); if (el) el.textContent = st[k] ? 'On · ' + st[k] : ''; }
+      $('doorState').textContent = on.length ? `${on.length} of ${HELP.length} on` : '';
+      $('doorSub').textContent = on.length
+        ? on.map(([, name]) => name).join(' · ')
+        : 'For evenings, nights, mornings, or a site you want distance from. All off until you switch it on.';
+      return on;
+    });
+  }
+  refreshHelp();
+  const changes = (typeof browser !== 'undefined' ? browser : chrome).storage.onChanged;
+  if (changes) changes.addListener((ch) => { if (HELP_KEYS.some((k) => k in ch)) refreshHelp(); });
+
+  // ---- Once, after the update: say that nothing was switched off -----------
+  api.get(['fgLayoutNote']).then(async (d) => {
+    if (!d || d.fgLayoutNote !== 'pending') return;
+    const on = await refreshHelp();
+    const names = on.map(([, , lower]) => lower);
+    const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+    $('layoutNoteList').textContent = names.length
+      ? `Your ${list} ${names.length > 1 ? 'are' : 'is'} still on. ${names.length > 1 ? 'They' : 'It'} now ${names.length > 1 ? 'live' : 'lives'} under More help.`
+      : 'Everything for evenings, nights and mornings now lives under More help.';
+    $('layoutNote').hidden = false;
+  });
+  const layoutDone = (more) => { $('layoutNote').hidden = true; api.set({ fgLayoutNote: 'seen' }); if (more) showLevel(true); };
+  $('layoutShow').addEventListener('click', () => layoutDone(true));
+  $('layoutOk').addEventListener('click', () => layoutDone(false));
 
   refresh();
 })();

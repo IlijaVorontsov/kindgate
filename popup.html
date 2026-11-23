@@ -13,11 +13,160 @@
     <p class="muted">Everything here stays on this device.</p>
   </header>
 
-  <!-- ============================ Check-in & cues ============================ -->
-  <details class="cat" id="cat-cues" open>
-    <summary><span class="cat-title">Check-in &amp; cues</span><span class="cat-sub">Your week, by feeling</span></summary>
+  <!-- Shown once after the update to an install that had the second layer. -->
+  <div id="layoutNote" class="note" role="status" hidden>
+    <p><strong>Kindgate has a new layout. Nothing was switched off.</strong> <span id="layoutNoteList"></span></p>
+    <div class="btnrow"><button type="button" id="layoutShow">Show me</button><button type="button" id="layoutOk">OK</button></div>
+  </div>
+
+  <!-- ================================ Level 1: the feeds ================================ -->
+  <section id="lvl-feeds" aria-label="Feeds">
+    <h2 class="lbl">Feeds</h2>
+
+    <div class="card site" id="card-youtube">
+      <label class="hd"><span><strong>YouTube</strong><span class="muted">Opens on your Subscriptions. No Shorts, no Home feed, no autoplay.</span></span><input type="checkbox" class="sw" id="ytMaster" data-site="yt" aria-label="Clean YouTube"></label>
+      <details class="adjust" id="adj-youtube">
+        <summary><span class="count" id="ytCount"></span><span class="lnk">Adjust</span></summary>
+      <details class="sub" id="sub-yt-clutter" open>
+        <summary>What to remove</summary>
+        <label class="row"><input type="checkbox" id="f_ytHome" data-feature="ytHome"><span><strong>Open on Subscriptions</strong><br><span class="muted">Home, Explore and Trending redirect there; their buttons are hidden; the logo goes there.</span></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytShorts" data-feature="ytShorts"><span><strong>Hide Shorts</strong><br><span class="muted">Shelves, tiles and the tab; Shorts links open in the normal player.</span></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytRelated" data-feature="ytRelated"><span><strong>Hide recommendations on watch pages</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytComments" data-feature="ytComments"><span><strong>Hide comments</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytAutoplay" data-feature="ytAutoplay"><span><strong>No autoplay</strong><br><span class="muted">No next video, no inline previews in feeds, no end-screen cards.</span></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytGuide" data-feature="ytGuide"><span><strong>Hide “Explore” and “More from YouTube” in the menu</strong><br><span class="muted">Desktop site: Music, Movies, Gaming, Premium, Kids and the like.</span></span></label>
+      </details>
+      <details class="sub ios-only" id="sub-yt-player">
+        <summary>Player &amp; navigation</summary>
+        <label class="row"><input type="checkbox" id="f_ytTabBar" data-feature="ytTabBar"><span><strong>Subscriptions / You bar on watch pages</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytPip" data-feature="ytPip"><span><strong>Picture in Picture button</strong></span></label>
+        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytRotate" data-feature="ytRotate"><span><strong>Rotate to fullscreen</strong></span></label>
+      </details>
+      <h3>Playback</h3>
+      <label class="row"><input type="checkbox" id="unmute"><span><strong>Unmute automatically</strong><br><span class="muted">Takes effect once playback has started.</span></span></label>
+      <label class="row" style="margin-top:10px"><input type="checkbox" id="blockupsell"><span><strong>Block “open in app” prompts</strong><br><span class="muted">Removes the App Store banner and the sites’ own “use the app” nags.</span></span></label>
+      <label class="row" style="margin-top:10px"><input type="checkbox" id="hidethumbs"><span><strong>Hide thumbnails in feeds</strong><br><span class="muted">Turn off if the Subscriptions list stalls while scrolling.</span></span></label>
+      <div class="field"><label for="quality">Default quality</label>
+        <select id="quality"><option value="auto">Auto</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option><option value="240">240p</option><option value="144">144p</option></select></div>
+      <p class="muted">Quality is best effort: YouTube’s player API is out of an extension’s reach, so this sets the preference YouTube remembers rather than forcing each video.</p>
+      </details>
+    </div>
+
+    <div class="card site" id="card-instagram">
+      <label class="hd"><span><strong>Instagram</strong><span class="muted">Only the people you follow. No Reels, no Explore, no suggested posts.</span></span><input type="checkbox" class="sw" id="igMaster" data-site="ig" aria-label="Clean Instagram"></label>
+      <details class="adjust" id="adj-instagram">
+        <summary><span class="count" id="igCount"></span><span class="lnk">Adjust</span></summary>
+      <label class="row"><input type="checkbox" id="f_igFollowing" data-feature="igFollowing"><span><strong>Open on Following</strong><br><span class="muted">The home feed becomes Instagram’s own “Following” view — no algorithmic feed.</span></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igReels" data-feature="igReels"><span><strong>Block Reels and Explore</strong><br><span class="muted">Their tabs are hidden and their pages redirect to the feed.</span></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igSuggested" data-feature="igSuggested"><span><strong>Hide “Suggested for you”</strong><br><span class="muted">Suggested posts, account carousels, and everything after “You’re all caught up”.</span></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igAds" data-feature="igAds"><span><strong>Hide sponsored posts</strong></span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igCheckpoint" data-feature="igCheckpoint"><span><strong>Checkpoint card while scrolling</strong><br><span class="muted">A card in the feed every so often with the post count and minutes so far, and a way out. Not a block.</span></span></label>
+      <div class="field"><label for="igEvery">Every</label>
+        <select id="igEvery"><option value="10">10 posts</option><option value="15">15 posts</option><option value="20">20 posts</option><option value="30">30 posts</option></select></div>
+      </details>
+    </div>
+
+    <div class="card" id="card-video">
+      <div class="hd ios-only"><span><strong>Video speed</strong><span class="muted" data-rate>…</span></span><span class="mk-speed-btns"><button type="button" data-speed="slower" aria-label="Slower">−</button><button type="button" data-speed="normal">1×</button><button type="button" data-speed="faster" aria-label="Faster">+</button></span></div>
+      <label class="hd mac-only"><span><strong>Video keys <span class="keycaps" aria-hidden="true"><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></strong><span class="muted">Speed, jump and fullscreen on any video.</span></span><input type="checkbox" class="sw" data-feature="mediaKeys" aria-label="Video keys"></label>
+      <details class="adjust" id="adj-video">
+        <summary><span class="count">Speed and keys</span><span class="lnk">Adjust</span></summary>
+        <div class="ios-only"><label class="row"><input type="checkbox" id="f_mediaKeys" data-feature="mediaKeys"><span><strong>Media keys on any video</strong><br><span class="muted">For a keyboard. Ignored while you type, with Command, Control, Option or Shift held, and on pages without a visible video.</span></span></label></div>
+      <label class="row" style="margin-top:10px"><input type="checkbox" id="f_speedCarry" data-feature="speedCarry"><span><strong>Carry speed changes from the player over to all videos</strong><br><span class="muted">A speed you pick in a video’s own menu becomes the speed for every video, in every tab, as the keys do. Off: it holds for that video, and the next one starts at your usual speed. Stays on this device.</span></span></label>
+        <div class="mac-only"><div class="mk-row mk-speed" style="margin-top:12px"><span><strong>Speed for every video</strong><br><span class="muted" data-rate>…</span></span><span class="mk-speed-btns"><button type="button" data-speed="slower" aria-label="Slower">−</button><button type="button" data-speed="normal">1×</button><button type="button" data-speed="faster" aria-label="Faster">+</button></span></div></div>
+      <p class="muted" style="margin:12px 0 4px">Click an action, then press the key you want. Esc cancels; Delete leaves the action without a key. Keys go by position: the defaults are shown as on a QWERTY keyboard (on Colemak they are Q W F A R S); a key you set shows the letter it types.</p>
+      <div id="mkList" class="mk-list"></div>
+      <div class="field"><label for="mkStep">Speed step</label>
+        <select id="mkStep"><option value="0.05">0.05×</option><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option></select></div>
+      <div class="field"><label for="mkSeek">Jump</label>
+        <select id="mkSeek"><option value="5">5 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
+      <div class="btnrow"><button type="button" id="mkReset">Reset keys</button></div>
+      <p class="muted" id="mkNote" style="margin-top:8px" hidden></p>
+      </details>
+    </div>
+
+    <button type="button" class="door" id="doorOpen" aria-controls="lvl-more">
+      <span class="door-text"><strong>More help</strong> <span class="door-state" id="doorState"></span><span class="muted" id="doorSub">For evenings, nights, mornings, or a site you want distance from. All off until you switch it on.</span></span>
+      <span class="chev" aria-hidden="true"></span>
+    </button>
+
+    <nav class="foot" aria-label="More">
+      <button type="button" class="linklike" data-open="cat-safari">Your data</button>
+      <a href="https://kindgate.app/privacy" target="_blank" rel="noopener" data-ext>Privacy</a>
+      <a href="https://kindgate.app/support" target="_blank" rel="noopener" data-ext>Support</a>
+      <button type="button" class="linklike" data-open="cat-about">About</button>
+    </nav>
+
+  <details class="cat" id="cat-safari">
+    <summary><span class="cat-title">Your data</span><span class="cat-sub">What stays where, Claude hand-off, your own shortcuts</span></summary>
     <div class="cat-body">
-      <label class="row" style="margin-bottom:14px"><input type="checkbox" id="checkinOn"><span><strong>Check-in card on YouTube and Instagram</strong><br><span class="muted">Asks what you were feeling, at most once per 20 minutes per site. Off stops the daytime card only; the morning, after-work and night windows keep their own switches.</span></span></label>
+      <label class="row"><input type="checkbox" id="claudeOn"><span><strong>Offer “Talk it through with Claude”</strong><br>
+        <span class="muted">Adds a button to the after-work card, the timer and the pause screen. It writes a short message about the moment (time, feeling, your plan — never a site), copies it, and opens claude.ai for you to paste. Nothing is sent until you press send there.</span></span></label>
+      <p class="muted ios-only" style="margin-top:12px"><strong>Tabs left open:</strong> a tab from last night
+        is a cue to carry on where you stopped, and Kindgate cannot close tabs. Safari can:
+        Settings → Apps → Safari → <em>Close Tabs</em> → After One Day. In the same place,
+        <em>Require Face ID to Unlock Private Browsing</em> keeps private tabs to yourself.</p>
+      <details class="sub" id="sub-shortcuts">
+        <summary>Your own shortcuts</summary>
+        <p class="muted">Every <em>Optional link</em> field in Kindgate — morning
+          steps, evening plans, wind-down audio — accepts a <code>shortcuts://</code>
+          link. So any button here can run a shortcut of yours: start a timer, set a
+          reminder, play a playlist, turn on a Focus, log to a note.</p>
+        <p class="muted">Build the link, copy it, paste it into whichever field you want:</p>
+        <div class="field"><label for="scbName">Shortcut</label><input type="text" id="scbName" placeholder="Exact name" maxlength="60"></div>
+        <div class="field"><label for="scbInput">Input (optional)</label><input type="text" id="scbInput" placeholder="e.g. 90" maxlength="60"></div>
+        <input type="text" id="scbOut" readonly class="mono">
+        <div class="btnrow">
+          <button type="button" id="scbCopy">Copy link</button>
+          <button type="button" id="scbOpen">Try it</button>
+        </div>
+        <p class="muted">In the shortcut, use <em>Shortcut Input</em> wherever you want
+          that value to land. Name it something short and unmistakable — the link
+          matches on the name, so renaming it later breaks the link.</p>
+        <div class="field"><label for="scInstall">Install link</label><input type="url" id="scInstall" placeholder="iCloud share link" inputmode="url"></div>
+        <p class="muted">Made one worth keeping? In Shortcuts, use Share →
+          Copy iCloud Link on it, and paste it here so it’s one step to reinstall — on a new
+          device, or for anyone you pass this extension to.</p>
+        <button type="button" id="scInstallOpen">Open install link</button>
+      </details>
+
+      <p class="muted" style="margin-top:12px">Kindgate itself sends nothing to anyone: no server, no account, no analytics. Your logs and settings stay on this device. The optional Claude button above opens claude.ai with a message on the clipboard; nothing reaches Claude unless you paste and send it there.</p>
+    </div>
+  </details>
+
+  <details class="cat" id="cat-about">
+    <summary><span class="cat-title">About</span><span class="cat-sub">Privacy policy, support, licences</span></summary>
+    <div class="cat-body">
+      <p class="links"><a href="https://kindgate.app/privacy" target="_blank" rel="noopener" data-ext>Privacy policy</a><a href="https://kindgate.app/support" target="_blank" rel="noopener" data-ext>Support</a></p>
+      <details class="sub" id="sub-licences">
+        <summary>Open source licences</summary>
+        <p class="muted"><strong>Kindgate</strong> is open source under the Mozilla Public License 2.0.
+          <a href="https://www.mozilla.org/MPL/2.0/" target="_blank" rel="noopener" data-ext>Read the licence</a> ·
+          <a href="https://github.com/IlijaVorontsov/kindgate" target="_blank" rel="noopener" data-ext>Source code</a></p>
+        <p class="muted"><strong>Fraunces</strong> and <strong>Instrument Sans</strong>, the typefaces: SIL Open Font License 1.1. Copyright 2018 The Fraunces Project Authors; copyright 2022 The Instrument Sans Project Authors.</p>
+        <p class="muted"><strong>Ready-made pause lists</strong>: from StevenBlack/hosts, MIT License. Copyright 2023 Steven Black.</p>
+        <div class="btnrow">
+          <button type="button" data-licence="fonts/OFL.txt">Font licence</button>
+          <button type="button" data-licence="lists/LICENSE">List licence</button>
+        </div>
+        <pre id="licenceText" class="licence" tabindex="0" hidden></pre>
+      </details>
+    </div>
+  </details>
+  </section>
+
+  <!-- ============================ Level 2: More help (the door) ============================ -->
+  <!-- Six optional parts, each off after install. Built so a later version can
+       replace this section's contents (programs) without touching level 1. -->
+  <section id="lvl-more" aria-label="More help" hidden>
+    <button type="button" class="back" id="doorBack">Feeds</button>
+    <h2 class="more-title">More help</h2>
+    <p class="muted more-intro">The feeds are cleaned either way. Each of these adds a short stop at a moment you choose. None of them blocks: “Continue anyway” is always there, it just takes a few seconds.</p>
+
+    <div class="card help" id="help-checkin">
+      <label class="hd"><span><strong>Check-in</strong><span class="muted">A card on YouTube and Instagram asks what you were feeling. One tap, at most every 20 minutes.</span><span class="state" data-state="checkin"></span></span><input type="checkbox" class="sw" id="checkinOn"></label>
+      <details class="adjust" id="adj-checkin">
+        <summary><span class="count">Your week, by feeling</span><span class="lnk">Open</span></summary>
       <p id="range" class="muted">Last 7 days</p>
       <div class="stat"><span id="total">–</span><span class="muted">opens this week</span></div>
       <h2>By feeling</h2><div id="byCue" class="bars"></div>
@@ -28,22 +177,74 @@
       <h2>Recent</h2><ul id="recent" class="recent"></ul>
       <p id="empty" class="muted center" hidden>Nothing logged yet. Open Instagram or YouTube and answer the check-in.</p>
       <footer><button id="copy" type="button">Copy as JSON</button><button id="clear" type="button" class="danger">Clear log</button></footer>
+      </details>
     </div>
-  </details>
 
-  <!-- ================================ Morning ================================ -->
-  <details class="cat" id="cat-morning">
-    <summary><span class="cat-title">Morning</span><span class="cat-sub">The first 30 minutes</span></summary>
-    <div class="cat-body">
+    <div class="card help" id="help-evening">
+      <label class="hd"><span><strong>Evening plan</strong><span class="muted">After work, the card shows three things you decided earlier, one tap each.</span><span class="state" data-state="evening"></span></span><input type="checkbox" class="sw" id="workOn"></label>
+      <details class="adjust" id="adj-evening">
+        <summary><span class="count">Times, plans and wins</span><span class="lnk">Change</span></summary>
+        <p class="muted">Inside this window, the check-in shows your plans instead of asking how you feel.</p>
+          <div class="times"><input type="time" id="workStart"> <span class="muted">to</span> <input type="time" id="workEnd"></div>
+      <details class="sub" id="sub-plans">
+        <summary>Instead, I will…</summary>
+        <div class="plans">
+          <div class="plan"><input type="text" id="plan0" placeholder="e.g. 20-minute walk" maxlength="40"><input type="url" id="url0" placeholder="Optional link to open" inputmode="url"></div>
+          <div class="plan"><input type="text" id="plan1" placeholder="e.g. Cook something" maxlength="40"><input type="url" id="url1" placeholder="Optional link to open" inputmode="url"></div>
+          <div class="plan"><input type="text" id="plan2" placeholder="e.g. Read" maxlength="40"><input type="url" id="url2" placeholder="Optional link to open" inputmode="url"></div>
+        </div>
+        <p class="muted">Concrete and doable in the next five minutes. A link (a podcast, the Books app) takes you straight there.</p>
+      </details>
+      <div class="stat"><span id="wins">–</span><span class="muted">wins this week</span></div>
+      <p id="streak" class="muted"></p>
+      <footer><button id="winsCopy" type="button">Copy wins as JSON</button><button id="winsClear" type="button" class="danger">Clear wins</button></footer>
+      <p id="winStatus" class="status"></p>
+      </details>
+    </div>
+
+    <div class="card help" id="help-night">
+      <label class="hd"><span><strong>Night page</strong><span class="muted">At night every site first lands on a dim page with a ten-minute timer.</span><span class="tag">works on every website</span><span class="state" data-state="night"></span></span><input type="checkbox" class="sw" id="nightOn"></label>
+      <details class="adjust" id="adj-night">
+        <summary><span class="count">Times and sites that always open</span><span class="lnk">Change</span></summary>
+          <div class="times"><input type="time" id="nightStart"> <span class="muted">to</span> <input type="time" id="nightEnd"></div>
+      <details class="sub" id="sub-night">
+        <summary>Sites that always open, audio</summary>
+        <p class="muted">Inside the night window, <strong>every tab</strong> opened in Safari lands on the can’t-sleep page. “Continue anyway” clears only the tab you used it in — a new tab starts over. Sites listed here are always allowed (one per line, e.g. <code>maps.apple.com</code>).</p>
+        <textarea id="nightAllow" rows="3" placeholder="maps.apple.com&#10;mybank.example" style="width:100%"></textarea>
+        <h3>Can’t-sleep audio (optional)</h3>
+        <input type="url" id="nsdr" placeholder="Default: Huberman Lab 20-minute NSDR" inputmode="url" style="width:100%">
+        <p class="muted">Shown on the “Can’t sleep?” screen, and offered whenever you log “tired” by day. The default is Huberman Lab’s 20-minute NSDR; that one video is let through the check-in and night page for 25 minutes. Paste another link (Apple Music, Spotify, a podcast app) to use it instead.</p>
+      </details>
+        <p class="muted">Needs Safari’s permission for Other Websites: Settings › Apps › Safari › Extensions › Kindgate (on a Mac: Safari › Settings › Extensions).</p>
+      </details>
+    </div>
+
+    <div class="card help" id="help-warm">
+      <label class="hd"><span><strong>Warm screen</strong><span class="muted">After the hour you set, pages ease toward candlelight.</span><span class="tag">works on every website</span><span class="state" data-state="warm"></span></span><input type="checkbox" class="sw" id="warmOn"></label>
+      <details class="adjust" id="adj-warm">
+        <summary><span class="count">Hours, warmth and dimming</span><span class="lnk">Change</span></summary>
+        <p class="muted">An amber layer over the page itself, fading in and out so it never snaps. Goes further than Night Shift, which barely touches bright web pages.</p>
+        <div class="times"><input type="time" id="warmStart"> <span class="muted">to</span> <input type="time" id="warmEnd"></div>
+        <div class="field"><label for="warmth">Warmth</label>
+          <select id="warmth"><option value="30">Slight</option><option value="50">Gentle</option><option value="70">Warm</option><option value="85">Very warm</option><option value="100">Candlelight</option></select></div>
+        <div class="field"><label for="warmDim">Dimming</label>
+          <select id="warmDim"><option value="0">None</option><option value="20">Slight</option><option value="45">Medium</option><option value="70">Strong</option><option value="100">Darkest</option></select></div>
+        <div class="field"><label for="warmRamp">Fade in over</label>
+          <select id="warmRamp"><option value="0">No fade</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option></select></div>
+        <h3>Leave these sites alone</h3>
+        <textarea id="warmSkip" rows="2" placeholder="figma.com&#10;photos.google.com" style="width:100%"></textarea>
+        <p class="muted">One per line — for anything where colour has to be true.</p>
+      </details>
+    </div>
+
+    <div class="card help" id="help-morning">
+      <label class="hd"><span><strong>Morning list</strong><span class="muted">In your first half hour, a feed shows your own first steps instead.</span><span class="state" data-state="morning"></span></span><input type="checkbox" class="sw" id="morningOn"></label>
+      <details class="adjust" id="adj-morning">
+        <summary><span class="count">Hours, steps and routine</span><span class="lnk">Change</span></summary>
       <p class="muted">For a while after waking, thinking is slower, so the
         decision belongs to the night before. Inside this window Safari shows
         your sequence instead of a feed — no questions, nothing to decide.</p>
-
-      <div class="win" style="margin-top:10px">
-        <label class="row"><input type="checkbox" id="morningOn"><span><strong>Morning window</strong></span></label>
         <div class="times"><input type="time" id="morningStart"> <span class="muted">to</span> <input type="time" id="morningEnd"></div>
-      </div>
-
       <details class="sub" id="sub-morning-steps" open>
         <summary>First, I will…</summary>
         <p class="muted">A short list, in order — each one you could start without thinking. Tick them off on the page; once the list is done it doesn’t come back until tomorrow.</p>
@@ -118,83 +319,21 @@
         <label class="row" style="margin-top:10px"><input type="checkbox" id="ms_night" data-setup="night"><span><strong>Tomorrow decided tonight</strong><br><span class="muted">Anything you leave for the morning gets decided by the least capable version of you.</span></span></label>
         <p class="muted" style="margin-top:12px">Give it weeks, not days. In the study people usually cite, habits took a median of about 66 days to settle — and ranged from 18 to 254. The “21 days” figure is a myth.</p>
       </details>
-
       <p id="morningStatus" class="status"></p>
-    </div>
-  </details>
-
-  <!-- ============================== Evening plan ============================== -->
-  <details class="cat" id="cat-evening">
-    <summary><span class="cat-title">Evening plan</span><span class="cat-sub">After work &amp; night</span></summary>
-    <div class="cat-body">
-      <div class="stat"><span id="wins">–</span><span class="muted">wins this week</span></div>
-      <p id="streak" class="muted"></p>
-      <footer><button id="winsCopy" type="button">Copy wins as JSON</button><button id="winsClear" type="button" class="danger">Clear wins</button></footer>
-      <p id="winStatus" class="status"></p>
-
-      <details class="sub" id="sub-windows" open>
-        <summary>Windows</summary>
-        <p class="muted">Inside these, the check-in shows your plans instead of asking how you feel.</p>
-        <div class="win">
-          <label class="row"><input type="checkbox" id="workOn"><span><strong>After work</strong></span></label>
-          <div class="times"><input type="time" id="workStart"> <span class="muted">to</span> <input type="time" id="workEnd"></div>
-        </div>
-        <div class="win">
-          <label class="row"><input type="checkbox" id="nightOn"><span><strong>Night</strong></span></label>
-          <div class="times"><input type="time" id="nightStart"> <span class="muted">to</span> <input type="time" id="nightEnd"></div>
-        </div>
-      </details>
-
-      <details class="sub" id="sub-plans">
-        <summary>Instead, I will…</summary>
-        <div class="plans">
-          <div class="plan"><input type="text" id="plan0" placeholder="e.g. 20-minute walk" maxlength="40"><input type="url" id="url0" placeholder="Optional link to open" inputmode="url"></div>
-          <div class="plan"><input type="text" id="plan1" placeholder="e.g. Cook something" maxlength="40"><input type="url" id="url1" placeholder="Optional link to open" inputmode="url"></div>
-          <div class="plan"><input type="text" id="plan2" placeholder="e.g. Read" maxlength="40"><input type="url" id="url2" placeholder="Optional link to open" inputmode="url"></div>
-        </div>
-        <p class="muted">Concrete and doable in the next five minutes. A link (a podcast, the Books app) takes you straight there.</p>
-      </details>
-
-      <details class="sub" id="sub-night">
-        <summary>Night mode</summary>
-        <p class="muted">Inside the night window, <strong>every tab</strong> opened in Safari lands on the can’t-sleep page. “Continue anyway” clears only the tab you used it in — a new tab starts over. Sites listed here are always allowed (one per line, e.g. <code>maps.apple.com</code>).</p>
-        <textarea id="nightAllow" rows="3" placeholder="maps.apple.com&#10;mybank.example" style="width:100%"></textarea>
-        <h3>Can’t-sleep audio (optional)</h3>
-        <input type="url" id="nsdr" placeholder="Default: Huberman Lab 20-minute NSDR" inputmode="url" style="width:100%">
-        <p class="muted">Shown on the “Can’t sleep?” screen, and offered whenever you log “tired” by day. The default is Huberman Lab’s 20-minute NSDR; that one video is let through the check-in and night page for 25 minutes. Paste another link (Apple Music, Spotify, a podcast app) to use it instead.</p>
-      </details>
-
-      <details class="sub" id="sub-warm">
-        <summary>Warm screen</summary>
-        <label class="row"><input type="checkbox" id="warmOn"><span><strong>Warm and dim every page at night</strong><br><span class="muted">An amber layer over the page itself, fading in and out over the ramp so it never snaps. Goes further than Night Shift, which barely touches bright web pages.</span></span></label>
-        <div class="times"><input type="time" id="warmStart"> <span class="muted">to</span> <input type="time" id="warmEnd"></div>
-        <div class="field"><label for="warmth">Warmth</label>
-          <select id="warmth"><option value="30">Slight</option><option value="50">Gentle</option><option value="70">Warm</option><option value="85">Very warm</option><option value="100">Candlelight</option></select></div>
-        <div class="field"><label for="warmDim">Dimming</label>
-          <select id="warmDim"><option value="0">None</option><option value="20">Slight</option><option value="45">Medium</option><option value="70">Strong</option><option value="100">Darkest</option></select></div>
-        <div class="field"><label for="warmRamp">Fade in over</label>
-          <select id="warmRamp"><option value="0">No fade</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option></select></div>
-        <h3>Leave these sites alone</h3>
-        <textarea id="warmSkip" rows="2" placeholder="figma.com&#10;photos.google.com" style="width:100%"></textarea>
-        <p class="muted">One per line — for anything where colour has to be true.</p>
       </details>
     </div>
-  </details>
 
-  <!-- ================================= Pause ================================= -->
-  <details class="cat" id="cat-pause">
-    <summary><span class="cat-title">Pause</span><span class="cat-sub">Friction on sites you choose</span></summary>
-    <div class="cat-body" id="pauseSection">
+    <div class="card help" id="help-pause">
+      <label class="hd"><span><strong>Pause on sites you list</strong><span class="muted">A breath and a question before a site on your list opens.</span><span class="tag">works on every website</span><span class="state" data-state="pause"></span></span><input type="checkbox" class="sw" id="pauseOn"></label>
+      <details class="adjust" id="adj-pause">
+        <summary><span class="count">Sites, goal and patterns</span><span class="lnk">Change</span></summary>
+        <div id="pauseSection">
       <div id="pinGate" hidden>
         <p class="muted">This section is locked.</p>
         <div class="field"><input type="password" id="pinEntry" inputmode="numeric" placeholder="PIN" maxlength="8" style="width:120px"><button type="button" id="pinUnlock" style="flex:none">Unlock</button></div>
         <p id="pinWrong" class="muted" hidden>That's not it.</p>
       </div>
-      <div id="pauseBody">
-        <label class="row"><input type="checkbox" id="pauseOn">
-          <span><strong>Pause screen on listed sites</strong><br>
-          <span class="muted">A breathing pause, a feeling check-in and your replacement action — then “continue anyway”. Friction, not a wall.</span></span></label>
-
+          <div id="pauseBody">
         <details class="sub" id="sub-sites">
           <summary>Sites</summary>
           <textarea id="pauseSites" rows="4" placeholder="One per line. A word matches any site containing it; a domain matches that site." style="width:100%"></textarea>
@@ -257,131 +396,14 @@
           <p class="muted">The log holds the time, the feeling and what you chose — never a site. A PIN keeps casual eyes out of this section.</p>
           <div class="field"><input type="password" id="pinNew" inputmode="numeric" placeholder="PIN" maxlength="8" style="width:100%"><button type="button" id="pinSet" style="flex:none">Set</button><button type="button" id="pinClear" style="flex:none" hidden>Remove</button></div>
         </details>
-      </div>
-    </div>
-  </details>
-
-  <!-- ============================ YouTube & feeds ============================ -->
-  <details class="cat" id="cat-youtube">
-    <summary><span class="cat-title">YouTube</span><span class="cat-sub">What to remove, player, playback</span></summary>
-    <div class="cat-body">
-      <details class="sub" id="sub-yt-clutter" open>
-        <summary>What to remove</summary>
-        <label class="row"><input type="checkbox" id="f_ytHome" data-feature="ytHome"><span><strong>Open on Subscriptions</strong><br><span class="muted">Home, Explore and Trending redirect there; their buttons are hidden; the logo goes there.</span></span></label>
-        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytShorts" data-feature="ytShorts"><span><strong>Hide Shorts</strong><br><span class="muted">Shelves, tiles and the tab; Shorts links open in the normal player.</span></span></label>
-        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytRelated" data-feature="ytRelated"><span><strong>Hide recommendations on watch pages</strong></span></label>
-        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytComments" data-feature="ytComments"><span><strong>Hide comments</strong></span></label>
-        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytAutoplay" data-feature="ytAutoplay"><span><strong>No autoplay</strong><br><span class="muted">No next video, no inline previews in feeds, no end-screen cards.</span></span></label>
-        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytGuide" data-feature="ytGuide"><span><strong>Hide “Explore” and “More from YouTube” in the menu</strong><br><span class="muted">Desktop site: Music, Movies, Gaming, Premium, Kids and the like.</span></span></label>
-      </details>
-      <details class="sub ios-only" id="sub-yt-player">
-        <summary>Player &amp; navigation</summary>
-        <label class="row"><input type="checkbox" id="f_ytTabBar" data-feature="ytTabBar"><span><strong>Subscriptions / You bar on watch pages</strong></span></label>
-        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytPip" data-feature="ytPip"><span><strong>Picture in Picture button</strong></span></label>
-        <label class="row" style="margin-top:8px"><input type="checkbox" id="f_ytRotate" data-feature="ytRotate"><span><strong>Rotate to fullscreen</strong></span></label>
-      </details>
-      <h3>Playback</h3>
-      <label class="row"><input type="checkbox" id="unmute"><span><strong>Unmute automatically</strong><br><span class="muted">Takes effect once playback has started.</span></span></label>
-      <label class="row" style="margin-top:10px"><input type="checkbox" id="blockupsell"><span><strong>Block “open in app” prompts</strong><br><span class="muted">Removes the App Store banner and the sites’ own “use the app” nags.</span></span></label>
-      <label class="row" style="margin-top:10px"><input type="checkbox" id="hidethumbs"><span><strong>Hide thumbnails in feeds</strong><br><span class="muted">Turn off if the Subscriptions list stalls while scrolling.</span></span></label>
-      <div class="field"><label for="quality">Default quality</label>
-        <select id="quality"><option value="auto">Auto</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option><option value="240">240p</option><option value="144">144p</option></select></div>
-      <p class="muted">Quality is best effort: YouTube’s player API is out of an extension’s reach, so this sets the preference YouTube remembers rather than forcing each video.</p>
-    </div>
-  </details>
-
-  <!-- =============================== Media keys ============================== -->
-  <details class="cat" id="cat-mediakeys">
-    <summary><span class="cat-title">Media keys</span><span class="cat-sub">Speed and seek on any video</span></summary>
-    <div class="cat-body">
-      <label class="row"><input type="checkbox" id="f_mediaKeys" data-feature="mediaKeys"><span><strong>Media keys on any video</strong><br><span class="muted">For a keyboard. Ignored while you type, with Command, Control, Option or Shift held, and on pages without a visible video.</span></span></label>
-      <label class="row" style="margin-top:10px"><input type="checkbox" id="f_speedCarry" data-feature="speedCarry"><span><strong>Carry speed changes from the player over to all videos</strong><br><span class="muted">A speed you pick in a video’s own menu becomes the speed for every video, in every tab, as the keys do. Off: it holds for that video, and the next one starts at your usual speed. Stays on this device.</span></span></label>
-      <div class="mk-row mk-speed" style="margin-top:12px"><span><strong>Speed for every video</strong><br><span class="muted" id="mkRate">…</span></span><span class="mk-speed-btns"><button type="button" id="mkSlower" aria-label="Slower">−</button><button type="button" id="mkNormal">1×</button><button type="button" id="mkFaster" aria-label="Faster">+</button></span></div>
-      <p class="muted" style="margin:12px 0 4px">Click an action, then press the key you want. Esc cancels; Delete leaves the action without a key. Keys go by position: the defaults are shown as on a QWERTY keyboard (on Colemak they are Q W F A R S); a key you set shows the letter it types.</p>
-      <div id="mkList" class="mk-list"></div>
-      <div class="field"><label for="mkStep">Speed step</label>
-        <select id="mkStep"><option value="0.05">0.05×</option><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option></select></div>
-      <div class="field"><label for="mkSeek">Jump</label>
-        <select id="mkSeek"><option value="5">5 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
-      <div class="btnrow"><button type="button" id="mkReset">Reset keys</button></div>
-      <p class="muted" id="mkNote" style="margin-top:8px" hidden></p>
-    </div>
-  </details>
-
-  <!-- =============================== Instagram =============================== -->
-  <details class="cat" id="cat-instagram">
-    <summary><span class="cat-title">Instagram</span><span class="cat-sub">Only accounts you follow</span></summary>
-    <div class="cat-body">
-      <label class="row"><input type="checkbox" id="f_igFollowing" data-feature="igFollowing"><span><strong>Open on Following</strong><br><span class="muted">The home feed becomes Instagram’s own “Following” view — no algorithmic feed.</span></span></label>
-      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igReels" data-feature="igReels"><span><strong>Block Reels and Explore</strong><br><span class="muted">Their tabs are hidden and their pages redirect to the feed.</span></span></label>
-      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igSuggested" data-feature="igSuggested"><span><strong>Hide “Suggested for you”</strong><br><span class="muted">Suggested posts, account carousels, and everything after “You’re all caught up”.</span></span></label>
-      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igAds" data-feature="igAds"><span><strong>Hide sponsored posts</strong></span></label>
-      <label class="row" style="margin-top:8px"><input type="checkbox" id="f_igCheckpoint" data-feature="igCheckpoint"><span><strong>Checkpoint card while scrolling</strong><br><span class="muted">A card in the feed every so often with the post count and minutes so far, and a way out. Not a block.</span></span></label>
-      <div class="field"><label for="igEvery">Every</label>
-        <select id="igEvery"><option value="10">10 posts</option><option value="15">15 posts</option><option value="20">20 posts</option><option value="30">30 posts</option></select></div>
-    </div>
-  </details>
-
-  <!-- =============================== Safari ================================== -->
-  <details class="cat" id="cat-safari">
-    <summary><span class="cat-title">Safari &amp; privacy</span><span class="cat-sub">Claude hand-off, data</span></summary>
-    <div class="cat-body">
-      <label class="row"><input type="checkbox" id="claudeOn"><span><strong>Offer “Talk it through with Claude”</strong><br>
-        <span class="muted">Adds a button to the after-work card, the timer and the pause screen. It writes a short message about the moment (time, feeling, your plan — never a site), copies it, and opens claude.ai for you to paste. Nothing is sent until you press send there.</span></span></label>
-      <p class="muted ios-only" style="margin-top:12px"><strong>Tabs left open:</strong> a tab from last night
-        is a cue to carry on where you stopped, and Kindgate cannot close tabs. Safari can:
-        Settings → Apps → Safari → <em>Close Tabs</em> → After One Day. In the same place,
-        <em>Require Face ID to Unlock Private Browsing</em> keeps private tabs to yourself.</p>
-      <details class="sub" id="sub-shortcuts">
-        <summary>Your own shortcuts</summary>
-        <p class="muted">Every <em>Optional link</em> field in Kindgate — morning
-          steps, evening plans, wind-down audio — accepts a <code>shortcuts://</code>
-          link. So any button here can run a shortcut of yours: start a timer, set a
-          reminder, play a playlist, turn on a Focus, log to a note.</p>
-        <p class="muted">Build the link, copy it, paste it into whichever field you want:</p>
-        <div class="field"><label for="scbName">Shortcut</label><input type="text" id="scbName" placeholder="Exact name" maxlength="60"></div>
-        <div class="field"><label for="scbInput">Input (optional)</label><input type="text" id="scbInput" placeholder="e.g. 90" maxlength="60"></div>
-        <input type="text" id="scbOut" readonly class="mono">
-        <div class="btnrow">
-          <button type="button" id="scbCopy">Copy link</button>
-          <button type="button" id="scbOpen">Try it</button>
+          </div>
         </div>
-        <p class="muted">In the shortcut, use <em>Shortcut Input</em> wherever you want
-          that value to land. Name it something short and unmistakable — the link
-          matches on the name, so renaming it later breaks the link.</p>
-        <div class="field"><label for="scInstall">Install link</label><input type="url" id="scInstall" placeholder="iCloud share link" inputmode="url"></div>
-        <p class="muted">Made one worth keeping? In Shortcuts, use Share →
-          Copy iCloud Link on it, and paste it here so it’s one step to reinstall — on a new
-          device, or for anyone you pass this extension to.</p>
-        <button type="button" id="scInstallOpen">Open install link</button>
-      </details>
-
-      <p class="muted" style="margin-top:12px">Kindgate itself sends nothing to anyone: no server, no account, no analytics. Your logs and settings stay on this device. The optional Claude button above opens claude.ai with a message on the clipboard; nothing reaches Claude unless you paste and send it there.</p>
-    </div>
-  </details>
-
-  <!-- ================================= About ================================= -->
-  <details class="cat" id="cat-about">
-    <summary><span class="cat-title">About</span><span class="cat-sub">Privacy policy, support, licences</span></summary>
-    <div class="cat-body">
-      <p class="links"><a href="https://kindgate.app/privacy" target="_blank" rel="noopener" data-ext>Privacy policy</a><a href="https://kindgate.app/support" target="_blank" rel="noopener" data-ext>Support</a></p>
-      <details class="sub" id="sub-licences">
-        <summary>Open source licences</summary>
-        <p class="muted"><strong>Kindgate</strong> is open source under the Mozilla Public License 2.0.
-          <a href="https://www.mozilla.org/MPL/2.0/" target="_blank" rel="noopener" data-ext>Read the licence</a> ·
-          <a href="https://github.com/IlijaVorontsov/kindgate" target="_blank" rel="noopener" data-ext>Source code</a></p>
-        <p class="muted"><strong>Fraunces</strong> and <strong>Instrument Sans</strong>, the typefaces: SIL Open Font License 1.1. Copyright 2018 The Fraunces Project Authors; copyright 2022 The Instrument Sans Project Authors.</p>
-        <p class="muted"><strong>Ready-made pause lists</strong>: from StevenBlack/hosts, MIT License. Copyright 2023 Steven Black.</p>
-        <div class="btnrow">
-          <button type="button" data-licence="fonts/OFL.txt">Font licence</button>
-          <button type="button" data-licence="lists/LICENSE">List licence</button>
-        </div>
-        <pre id="licenceText" class="licence" tabindex="0" hidden></pre>
       </details>
     </div>
-  </details>
+  </section>
 
   <script src="migrate.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
+

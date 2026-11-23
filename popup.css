@@ -172,3 +172,115 @@ a { color: var(--kg-amber-ink); }
   a { color: var(--kg-honey); }
   .licence { background: var(--kg-ink); }
 }
+
+/* ---- Two levels (release 1): the feeds, and one door to More help ---------- */
+html:not(.kg-mac) .mac-only { display: none !important; }
+.lbl { margin: 14px 0 8px; }
+.card { background: var(--kg-sand); border-radius: var(--kg-radius-card); padding: 13px 14px; margin-bottom: 10px; }
+.card .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; cursor: pointer; }
+.card div.hd { cursor: default; align-items: center; }
+.card .hd > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.card .hd strong { font-size: 16px; }
+.card .hd .muted { font-size: 13px; }
+.card .state { font-size: 13px; font-weight: 600; color: var(--kg-sage-deep); }
+.card .state:empty { display: none; }
+.tag { align-self: flex-start; font-size: 11.5px; font-weight: 600; padding: 0 7px; border-radius: var(--kg-radius-pill); border: 1px solid var(--kg-ink-muted); color: var(--kg-ink-muted); margin-top: 3px; }
+.keycaps { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: 2px; }
+.keycaps kbd { font: 600 10.5px/1 var(--kg-font-mono); padding: 3px 4px; border-radius: 5px; background: var(--kg-cream); color: var(--kg-ink-muted); }
+
+/* A switch drawn from the checkbox itself, so the label still toggles it. */
+input.sw {
+  appearance: none; -webkit-appearance: none; flex: none; margin: 0; cursor: pointer;
+  width: 46px; height: 28px; border-radius: 14px; background: var(--kg-line); position: relative;
+  transition: background .15s ease;
+}
+input.sw::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--kg-cream); box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .15s ease;
+}
+input.sw:checked { background: var(--kg-honey); }
+input.sw:checked::after { transform: translateX(18px); }
+input.sw:disabled { opacity: .45; cursor: not-allowed; }
+input.sw:focus-visible { outline: 2px solid var(--kg-amber-ink); outline-offset: 2px; }
+
+/* "9 of 9 on · Adjust": the card's footer opens its settings in place. */
+details.adjust { margin-top: 10px; border-top: 1px solid var(--kg-line); }
+details.adjust > summary {
+  list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  padding-top: 9px; font-size: 13px; color: var(--kg-ink-muted); -webkit-tap-highlight-color: transparent;
+}
+details.adjust > summary::-webkit-details-marker { display: none; }
+details.adjust[open] > summary { margin-bottom: 8px; }
+details.adjust[open] > summary .lnk::after { content: " ▴"; }
+.lnk { color: var(--kg-amber-ink); font-weight: 600; white-space: nowrap; }
+details.adjust details.sub { background: var(--kg-cream); }
+details.adjust details.sub input[type="time"], details.adjust details.sub input[type="text"], details.adjust details.sub input[type="url"],
+details.adjust details.sub textarea, details.adjust details.sub select { background: var(--kg-sand); }
+details.adjust .assess-result, details.adjust .status { background: var(--kg-cream); }
+details.adjust .times { margin-left: 0; }
+
+/* The door. */
+.door {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; margin-top: 14px;
+  padding: 13px 10px 13px 14px; border: 1.5px solid var(--kg-line); border-radius: var(--kg-radius-card);
+  background: transparent; color: inherit; font-weight: 400;
+}
+.door:active { background: var(--kg-sand); }
+.door-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.door-text strong { font-size: 16px; }
+.door-state { font-size: 13px; font-weight: 600; color: var(--kg-sage-deep); }
+.door-state:empty { display: none; }
+.chev, .back::before {
+  flex: none; width: 8px; height: 8px; border-right: 2px solid var(--kg-ink-muted); border-top: 2px solid var(--kg-ink-muted);
+  transform: rotate(45deg); margin: 0 4px 0 8px;
+}
+.back {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; margin: 4px 0 2px;
+  background: transparent; color: var(--kg-amber-ink);
+}
+.back::before { content: ""; transform: rotate(-135deg); margin: 0 2px 0 6px; border-color: var(--kg-amber-ink); }
+.more-title { font: 600 22px/1.2 var(--kg-font-display); text-transform: none; letter-spacing: -0.01em; color: inherit; margin: 6px 0 6px; }
+.more-intro { margin-bottom: 14px; }
+
+.foot { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0 6px; font-size: 13px; font-weight: 600; }
+.foot a { text-decoration: none; }
+button.linklike { flex: none; padding: 0; background: none; font-size: 13px; color: var(--kg-amber-ink); border-radius: 0; }
+
+.note { margin: 8px 0 4px; padding: 12px; border-radius: var(--kg-radius-card); background: var(--kg-sand); border-left: 3px solid var(--kg-sage); font-size: 14px; }
+
+@media (prefers-color-scheme: dark) {
+  .card { background: var(--kg-ink-raised); }
+  .card .state, .door-state { color: var(--kg-sage-light); }
+  .tag { border-color: var(--kg-line); color: var(--kg-line); }
+  .keycaps kbd { background: var(--kg-ink); color: var(--kg-line); }
+  input.sw { background: var(--kg-ink-raised-2); }
+  input.sw:checked { background: var(--kg-honey); }
+  details.adjust { border-color: var(--kg-ink-raised-2); }
+  details.adjust > summary { color: var(--kg-line); }
+  details.adjust details.sub { background: var(--kg-ink); }
+  details.adjust details.sub input[type="time"], details.adjust details.sub input[type="text"], details.adjust details.sub input[type="url"],
+  details.adjust details.sub textarea, details.adjust details.sub select { background: var(--kg-ink-raised); }
+  details.adjust .assess-result, details.adjust .status { background: var(--kg-ink); }
+  .lnk, .back, button.linklike { color: var(--kg-honey); }
+  .back::before { border-color: var(--kg-honey); }
+  .door { border-color: var(--kg-ink-raised-2); }
+  .door:active { background: var(--kg-ink-raised); }
+  .chev { border-color: var(--kg-line); }
+  .note { background: var(--kg-ink-raised); border-left-color: var(--kg-sage-light); }
+}
+/* Buttons on a card or the note sit on sand, so they take the ground colour. */
+.card button:not(.mk-key):not(.linklike), .note button { background: var(--kg-cream); }
+.card .mk-key { background: var(--kg-cream); }
+.card .mk-speed-btns button { min-width: 44px; }
+@media (prefers-color-scheme: dark) {
+  .card button:not(.mk-key):not(.linklike), .note button, .card .mk-key { background: var(--kg-ink); }
+}
+/* Fields placed straight on a card (not inside a sub-panel) take the ground colour. */
+.card > details.adjust > .times input, .card > details.adjust > .win input[type="time"], .card > details.adjust > .field select,
+.card > details.adjust > .field input, .card > details.adjust > textarea, .card > details.adjust > input[type="url"],
+.card > details.adjust > .plans input, .card > details.adjust > h3 + textarea { background-color: var(--kg-cream); }
+@media (prefers-color-scheme: dark) {
+  .card > details.adjust > .times input, .card > details.adjust > .win input[type="time"], .card > details.adjust > .field select,
+  .card > details.adjust > .field input, .card > details.adjust > textarea, .card > details.adjust > input[type="url"],
+  .card > details.adjust > .plans input, .card > details.adjust > h3 + textarea { background-color: var(--kg-ink); }
+}
