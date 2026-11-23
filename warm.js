@@ -19,16 +19,20 @@
   if (window.top !== window) return;
   if (!/^https?:$/.test(location.protocol)) return;
 
-  // Tell the background script this site is allowed (see background.js); the
-  // container app's checklist turns green from it. Fire and forget.
-  try {
-    const rt = (typeof browser !== 'undefined' && browser.runtime) ? browser.runtime
-             : (typeof chrome !== 'undefined' && chrome.runtime) ? chrome.runtime : null;
-    if (rt && rt.sendMessage) {
-      const p = rt.sendMessage({ type: 'seen', host: location.hostname, standalone: navigator.standalone === true });
-      if (p && p.catch) p.catch(() => {});
-    }
-  } catch (e) { /* no background script (e.g. desktop browser) */ }
+  // Tell the background script that Kindgate ran on some other website (see
+  // background.js), for the app's optional "Other Websites" row. YouTube and
+  // Instagram report from their own scripts, which run with only the two
+  // sites allowed. Fire and forget.
+  if (!/(^|\.)(youtube|instagram)\.com$/i.test(location.hostname)) {
+    try {
+      const rt = (typeof browser !== 'undefined' && browser.runtime) ? browser.runtime
+               : (typeof chrome !== 'undefined' && chrome.runtime) ? chrome.runtime : null;
+      if (rt && rt.sendMessage) {
+        const p = rt.sendMessage({ type: 'seen', host: location.hostname, standalone: navigator.standalone === true });
+        if (p && p.catch) p.catch(() => {});
+      }
+    } catch (e) { /* no background script (e.g. desktop browser) */ }
+  }
 
   const HOST = location.hostname.toLowerCase().replace(/^www\./, '');
   const DEFAULTS = {

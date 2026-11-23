@@ -14,6 +14,21 @@
 (() => {
   'use strict';
 
+  // Tell the background script this site is allowed (see background.js); the
+  // container app's checklist turns green from it. Sent from here, not from an
+  // every-website script, so a user who allowed only the two sites still sees
+  // green rows. Fire and forget.
+  if (window.top === window) {
+    try {
+      const rt = (typeof browser !== 'undefined' && browser.runtime) ? browser.runtime
+               : (typeof chrome !== 'undefined' && chrome.runtime) ? chrome.runtime : null;
+      if (rt && rt.sendMessage) {
+        const p = rt.sendMessage({ type: 'seen', host: location.hostname, standalone: navigator.standalone === true });
+        if (p && p.catch) p.catch(() => {});
+      }
+    } catch (e) { /* no background script (e.g. desktop browser) */ }
+  }
+
   // ---- feature toggles (set in the popup) -------------------------------------
   // Read synchronously from a localStorage mirror so document_start decisions
   // (redirects) are right from the second visit on; storage refreshes it.

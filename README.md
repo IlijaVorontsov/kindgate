@@ -273,8 +273,9 @@ so this is what each one does there:
   bundled lists, and draws the pause screen on a match. The host name is not
   stored.
 - `warm.js` draws the amber overlay, and tells the Kindgate app that the
-  extension ran, with the host reduced to `youtube.com`, `instagram.com` or
-  `other`.
+  extension ran on a site other than YouTube and Instagram, reduced to
+  `other`. The two sites report from their own scripts, so their rows in the
+  app turn green with only those two sites allowed.
 - `media-keys.js` runs in every frame and listens for key presses, because
   bare letter keys cannot be registered any other way. It looks each press up
   in a map of six keys, ignores everything typed into a field or held with a
@@ -785,7 +786,7 @@ on YouTube and Instagram.
 | --- | --- | --- |
 | `checkin.js` | The night page appears on any site during your night window, and the morning coffee reminder can show on any site. Apart from those two it does nothing on sites other than YouTube and Instagram. Top frame only. | The host name, to check your night allow-list. In the logs every site other than the two is written as `other`. |
 | `pause.js` | The pause screen has to appear on whatever site is on your list or on a bundled list you switched on. Top frame only. | The host name, compared on the device with those lists. The pause log never holds a URL or host name. |
-| `warm.js` | The warm night overlay covers every page. Top frame only. It also tells the background script the host name of each page, which is how the app's checklist knows a site is allowed (see below). | The host name, for that report and for your skip list. |
+| `warm.js` | The warm night overlay covers every page. Top frame only. On sites other than YouTube and Instagram it also tells the background script the host name, which is how the app's optional "Other Websites" row knows they are allowed (see below). | The host name, for that report and for your skip list. |
 | `media-keys.js` | Speed, seek and fullscreen keys work on any video, so it listens for `keydown` on every page, in every frame. | The physical key code of each key press, looked up in a map of six keys. Other keys, keys with a modifier and keys typed into a field are passed on untouched. It stores the chosen speed and nothing about what was typed. |
 
 None of the four makes a network request. The one `fetch` in the code
@@ -815,8 +816,9 @@ They stay on the device.
   websites. The list of granted sites itself is not sent.
 - When a page loads, at most once a minute per name: `youtube.com`,
   `instagram.com` or `other`, a timestamp, and whether the page was opened
-  from the Home Screen. `warm.js` passes the full host name to the background
-  script, which reduces it to those three before anything is sent on.
+  from the Home Screen. `youtube.js`, `instagram.js` and (for every other
+  site) `warm.js` pass the full host name to the background script, which
+  reduces it to those three before anything is sent on.
 
 The handler (`app/Kindgate Extension/SafariWebExtensionHandler.swift`, the
 same file in the iPhone and the Mac app) keeps these in the App Group the app
