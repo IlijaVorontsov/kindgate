@@ -295,8 +295,9 @@ is what each one does there:
   extension ran on a site other than YouTube and Instagram, reduced to
   `other`. The two sites report from their own scripts, so their rows in the
   app turn green with only those two sites allowed.
-- `media-keys.js` runs in every frame and listens for key presses, because
-  bare letter keys cannot be registered any other way. It looks each press up
+- `media-keys.js` runs in every frame and, on a Mac, listens for key presses,
+  because bare letter keys cannot be registered any other way. On the iPhone
+  and iPad it adds no key listener and only applies the speed. It looks each press up
   in a map of six keys, ignores everything typed into a field or held with a
   modifier, and stores and sends no keys. The only thing it saves is the
   playback speed you chose.
@@ -512,8 +513,10 @@ set (see [Media keys](#media-keys)).
 
 ### Media keys
 
-With a hardware keyboard (a Mac, or an iPad with a keyboard) every HTML5 video
-answers to six bare keys. They are matched by position on the keyboard, not by
+On a Mac every HTML5 video
+answers to six bare keys (the iPhone and iPad have none, even with a
+keyboard attached: there the script binds no key and keeps only the one
+speed for every video). They are matched by position on the keyboard, not by
 the letter they type, so the same physical keys work on any layout:
 
 | QWERTY | Colemak | Action |
@@ -533,9 +536,11 @@ to every video in every tab and window, to videos that load later, and after
 Safari restarts. Q switches between 1× and that speed. Until you first press a speed key, videos
 play at whatever the site chooses.
 
-Without a keyboard (on the iPhone, say), the popup's **Video speed** row, on
+On the iPhone and iPad, the popup's **Video speed** row, on
 its first screen, shows the current speed and changes it with −, 1× and +,
-in the same steps as the keys; 1× switches back to the speed before, like Q.
+in the speed step set under its Adjust (0.1× unless you change it); 1×
+switches back to the speed before. Its Adjust holds only the speed step and
+the carry-over switch below.
 
 It is a starting speed, not a lock. Each video starts at it, and so does every
 video when you change it. A speed you then pick in the player's own menu holds
@@ -546,8 +551,8 @@ is left alone on that video after a few tries.
 
 **Carry speed changes from the player over to all videos** (in the popup under
 the video row's Adjust, off by default) makes a speed you pick in any player's own menu
-the global speed, as if you had used the keys. This works on the iPhone too,
-where there are no keys. Only your own changes count: one that follows a tap,
+the global speed, as if you had used the keys. On the iPhone and iPad, where
+there are no keys, it is the way to set the speed from a player. Only your own changes count: one that follows a tap,
 click or key of yours, or that you make in Safari's own fullscreen player.
 Changes the site makes (a new video loading, an ad, a live stream going back
 to 1×) are ignored, nothing is taken over during an ad, and the NSDR recording
@@ -571,8 +576,8 @@ uses the site's own button when there is one (YouTube, Twitch, Vimeo and the
 common player libraries), so its controls and subtitles stay. On Netflix, S and
 D are left to Netflix's own arrow keys, because its player breaks when the
 position is set from outside. Videos inside an embedded player answer once you
-have clicked into that player. Turn it off with the Video keys switch in the
-popup (on the iPhone and iPad: under Video speed › Adjust).
+have clicked into that player. Turn the keys off with the Video keys switch in
+the popup; the speed for every video stays.
 
 ### "Open in app" prompts
 
@@ -864,7 +869,7 @@ on YouTube and Instagram.
 | `checkin.js` | The night page appears on any site during your night window, and the morning coffee reminder can show on any site. Apart from those two it does nothing on sites other than YouTube and Instagram. Top frame only. | The host name, to check your night allow-list. In the logs every site other than the two is written as `other`. |
 | `pause.js` | The pause screen has to appear on whatever site is on your list or on a bundled list you switched on. Top frame only. | The host name, compared on the device with those lists. The pause log never holds a URL or host name. |
 | `warm.js` | The warm night overlay covers every page. Top frame only. On sites other than YouTube and Instagram it also tells the background script the host name, which is how the app's optional "Other Websites" row knows they are allowed (see below). | The host name, for that report and for your skip list. |
-| `media-keys.js` | Speed, seek and fullscreen keys work on any video, so it listens for `keydown` on every page, in every frame. | The physical key code of each key press, looked up in a map of six keys. Other keys, keys with a modifier and keys typed into a field are passed on untouched. It stores the chosen speed and nothing about what was typed. |
+| `media-keys.js` | The one speed applies to any video, and on a Mac the speed, seek and fullscreen keys work on any video, so it runs on every page, in every frame, and on a Mac listens for `keydown`. No key listener on the iPhone and iPad. | The physical key code of each key press, looked up in a map of six keys. Other keys, keys with a modifier and keys typed into a field are passed on untouched. It stores the chosen speed and nothing about what was typed. |
 
 None of the four makes a network request. The one `fetch` in the code
 (`pause.js`) reads a list bundled inside the extension.

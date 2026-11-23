@@ -636,6 +636,8 @@
   // Clicking or typing anywhere else cancels a rebind, so the next key meant
   // for another field is never taken as the media key.
   const mkCancel = () => { if (waiting) { waiting = null; mkRender(); } };
+  // The key settings exist only on a Mac; the iPhone and iPad get no key listener.
+  if (document.documentElement.classList.contains('kg-mac')) {
   document.addEventListener('pointerdown', (e) => { if (waiting && !(e.target.closest && e.target.closest('.mk-key'))) mkCancel(); }, true);
   document.addEventListener('focusin', (e) => { if (waiting && e.target.matches && e.target.matches('input, select, textarea, [contenteditable]')) mkCancel(); }, true);
   document.addEventListener('keydown', (e) => {
@@ -659,6 +661,7 @@
     mk.map[action] = bound;
     mkSave(); mkRender();
   }, true);
+  }
   mkStep.addEventListener('change', () => { mk.step = Number(mkStep.value) || 0.1; mkSave(); mkRender(); });
   mkSeek.addEventListener('change', () => { mk.seek = Number(mkSeek.value) || 10; mkSave(); mkRender(); });
   $('mkReset').addEventListener('click', () => { mk = JSON.parse(JSON.stringify(MK_DEFAULT)); waiting = null; mkNoteSay(''); mkSave(); mkRender(); });

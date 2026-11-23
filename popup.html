@@ -70,18 +70,21 @@
       <div class="hd ios-only"><span><strong>Video speed</strong><span class="muted" data-rate>…</span></span><span class="mk-speed-btns"><button type="button" data-speed="slower" aria-label="Slower">−</button><button type="button" data-speed="normal">1×</button><button type="button" data-speed="faster" aria-label="Faster">+</button></span></div>
       <label class="hd mac-only"><span><strong>Video keys <span class="keycaps" aria-hidden="true"><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></strong><span class="muted">Speed, jump and fullscreen on any video.</span></span><input type="checkbox" class="sw" data-feature="mediaKeys" aria-label="Video keys"></label>
       <details class="adjust" id="adj-video">
-        <summary><span class="count">Speed and keys</span><span class="lnk">Adjust</span></summary>
-        <div class="ios-only"><label class="row"><input type="checkbox" id="f_mediaKeys" data-feature="mediaKeys"><span><strong>Media keys on any video</strong><br><span class="muted">For a keyboard. Ignored while you type, with Command, Control, Option or Shift held, and on pages without a visible video.</span></span></label></div>
-      <label class="row" style="margin-top:10px"><input type="checkbox" id="f_speedCarry" data-feature="speedCarry"><span><strong>Carry speed changes from the player over to all videos</strong><br><span class="muted">A speed you pick in a video’s own menu becomes the speed for every video, in every tab, as the keys do. Off: it holds for that video, and the next one starts at your usual speed. Stays on this device.</span></span></label>
+        <summary><span class="count"><span class="mac-only">Speed and keys</span><span class="ios-only">Speed</span></span><span class="lnk">Adjust</span></summary>
+      <label class="row" style="margin-top:10px"><input type="checkbox" id="f_speedCarry" data-feature="speedCarry"><span><strong>Carry speed changes from the player over to all videos</strong><br><span class="muted">A speed you pick in a video’s own menu becomes the speed for every video, in every tab<span class="mac-only">, as the keys do</span>. Off: it holds for that video, and the next one starts at your usual speed. Stays on this device.</span></span></label>
         <div class="mac-only"><div class="mk-row mk-speed" style="margin-top:12px"><span><strong>Speed for every video</strong><br><span class="muted" data-rate>…</span></span><span class="mk-speed-btns"><button type="button" data-speed="slower" aria-label="Slower">−</button><button type="button" data-speed="normal">1×</button><button type="button" data-speed="faster" aria-label="Faster">+</button></span></div></div>
+      <div class="mac-only" id="mkKeys">
       <p class="muted" style="margin:12px 0 4px">Click an action, then press the key you want. Esc cancels; Delete leaves the action without a key. Keys go by position: the defaults are shown as on a QWERTY keyboard (on Colemak they are Q W F A R S); a key you set shows the letter it types.</p>
       <div id="mkList" class="mk-list"></div>
+      </div>
       <div class="field"><label for="mkStep">Speed step</label>
         <select id="mkStep"><option value="0.05">0.05×</option><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option></select></div>
+      <div class="mac-only">
       <div class="field"><label for="mkSeek">Jump</label>
         <select id="mkSeek"><option value="5">5 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option></select></div>
       <div class="btnrow"><button type="button" id="mkReset">Reset keys</button></div>
       <p class="muted" id="mkNote" style="margin-top:8px" hidden></p>
+      </div>
       </details>
     </div>
 

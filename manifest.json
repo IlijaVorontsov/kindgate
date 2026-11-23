@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Kindgate",
   "version": "6.3",
-  "description": "YouTube without Shorts or the Home feed and Instagram limited to the accounts you follow, in Safari. Speed and seek keys for any video on a keyboard. More help for evenings, nights and mornings, off until you switch it on.",
+  "description": "YouTube without Shorts or the Home feed and Instagram limited to the accounts you follow, in Safari. One speed for every video, with speed and seek keys on a Mac. More help for evenings, nights and mornings, off until you switch it on.",
   "icons": {
     "48": "images/icon-48.png",
     "96": "images/icon-96.png",
