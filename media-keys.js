@@ -1,4 +1,8 @@
-// Kindgate — media keys for any HTML5 video (for a hardware keyboard: Mac, iPad)
+// Kindgate — media keys for any HTML5 video, on a Mac; one global speed everywhere
+//
+// On the iPhone and iPad there are no keys: the script binds none there and
+// only keeps the global speed (set from the popup's Video speed row, or carried
+// over from a player).
 //
 // Default keys below; each can be rebound in the popup (Media keys), along
 // with the speed step and the jump length. Keys are matched by position, not
@@ -42,6 +46,9 @@
   }
   applyKeys(null);
   const REPEATABLE = new Set(['slower', 'faster', 'back', 'forward']);
+  // Keys only on a Mac. An iPad asks for the desktop site as "MacIntel" but
+  // has touch points; the iPhone and iPad get the speed and no key listener.
+  const KEYS_ON = /^Mac/.test(navigator.platform) && !navigator.maxTouchPoints;
 
   // ---- on/off switch (popup → fgFeatures.mediaKeys, default on) ---------------
   let enabled = true;
@@ -148,7 +155,9 @@
   const clamp = (r) => Math.min(MAX_RATE, Math.max(MIN_RATE, r));
   // Snap to the step's grid (0.05, 0.1, 0.25, 0.5), so 1.25 + 0.1 lands on 1.3 or 1.4 cleanly.
   const step = (r) => clamp(Number((Math.round(r / STEP) * STEP).toFixed(2)));
-  const speedOn = () => enabled || carry;
+  // On iOS the media-keys switch is gone from the popup, so a value stored
+  // under it earlier must not switch the speed off there.
+  const speedOn = () => !KEYS_ON || enabled || carry;
 
   // Your own taps, clicks and keys in this frame: a rate change soon after one
   // is yours; one without is the site's.
@@ -157,7 +166,8 @@
   const MENU_MS = 10000;                         // a tap on a video's own controls -> its speed menu
   let lastGesture = 0;
   const controlTaps = new WeakMap();             // video with native controls -> last tap on it
-  for (const t of ['pointerdown', 'pointerup', 'click', 'touchend', 'keydown']) {
+  // (No key listener at all on iOS, not even this one that only watches.)
+  for (const t of ['pointerdown', 'pointerup', 'click', 'touchend'].concat(KEYS_ON ? ['keydown'] : [])) {
     window.addEventListener(t, (e) => {
       if (!e.isTrusted) return;
       lastGesture = Date.now();
@@ -173,6 +183,14 @@
   // In Safari's own fullscreen player the page sees no taps, but outside a
   // load only you change the rate there. (Picture in Picture has no speed
   // control, so a change there is always the site's.)
+  // YouTube's own player keeps a speed of its own (its menu, and the speed it
+  // gives the next video). yt-rate.js, in the page's world on youtube.com,
+  // copies the video's speed into it when it hears this event on the video.
+  const onYouTubeSite = window === window.top && /^(www\.|m\.)?youtube\.com$/.test(location.hostname);
+  const toPlayer = (v) => {
+    if (!onYouTubeSite || inAd(v)) return;
+    try { v.dispatchEvent(new CustomEvent('kg-yt-rate')); } catch { /* ignore */ }
+  };
   const nativeFullscreen = (v) => !!(v.webkitDisplayingFullscreen || v.webkitPresentationMode === 'fullscreen');
 
   function gaveUp(v) {
@@ -196,10 +214,11 @@
     if (why !== 'site' && s && s.src === src && s.gen === rateGen) return;   // already started at it
     seen.set(v, { src, gen: rateGen });
     v.setAttribute('data-kg-rate', String(globalRate));
-    if (same(v.playbackRate, globalRate)) return;
+    if (same(v.playbackRate, globalRate)) { toPlayer(v); return; }
     if (why === 'site' && gaveUp(v)) return;
     written.set(v, globalRate);
-    try { v.playbackRate = globalRate; } catch { written.delete(v); }
+    try { v.playbackRate = globalRate; } catch { written.delete(v); return; }
+    toPlayer(v);
   }
   function applyAll() {
     if (!speedOn() || globalRate == null) return;
@@ -230,6 +249,9 @@
     // readyState 0: the element is (re)loading and resetting its own rate.
     const yours = (tapped || (nativeFullscreen(v) && sinceLoad > LOAD_MS)) && v.readyState > 0 && !inAd(v);
     if (yours) {
+      // A speed picked in Safari's own fullscreen player (or any control
+      // that bypasses YouTube's menu) goes into YouTube's player too.
+      toPlayer(v);
       if (carry) setGlobal(clamp(Number(r.toFixed(2))), v);
       return;                                     // otherwise it holds for this video
     }
@@ -418,7 +440,8 @@
   }
   const fmtRate = (r) => `${Number(r.toFixed(2))}×`;
 
-  // ---- the listener -----------------------------------------------------------
+  // ---- the listener (Mac only) -------------------------------------------------
+  if (!KEYS_ON) return;
   // A key we acted on is ours for its whole press: its keypress and keyup are
   // stopped too, so a site that listens for those (YouTube's F for fullscreen
   // is the same physical key as Colemak's +0.1×) never sees it either.

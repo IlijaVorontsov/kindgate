@@ -35,6 +35,19 @@
     },
     {
       "matches": [
+        "*://www.youtube.com/*",
+        "*://m.youtube.com/*",
+        "*://youtube.com/*"
+      ],
+      "js": [
+        "yt-rate.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
         "*://www.instagram.com/*",
         "*://instagram.com/*"
       ],

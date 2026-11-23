@@ -501,12 +501,14 @@ a gesture. Both the PiP button and rotation start the video first if it is
 paused or has not begun.
 
 Playback preferences in the popup cover **unmute automatically** and a
-best-effort **default quality**. Speed is set only with the [media
-keys](#media-keys), one speed for every video. Unmute is applied
+best-effort **default quality**. Speed is the [one speed for every
+video](#media-keys). Unmute is applied
 straight to the video element and is reliable. Quality only nudges the
 preference YouTube persists, because the player API lives in the page's
-JavaScript world that a content script cannot reach, and YouTube's content
-security policy blocks injecting a script to get there.
+JavaScript world that a content script cannot reach. The one exception is
+the speed: `yt-rate.js` is registered in that world (`"world": "MAIN"`,
+Safari 18 and later), so YouTube's own speed menu shows the speed Kindgate
+set (see [Media keys](#media-keys)).
 
 ### Media keys
 
@@ -551,6 +553,16 @@ Changes the site makes (a new video loading, an ad, a live stream going back
 to 1×) are ignored, nothing is taken over during an ad, and the NSDR recording
 stays at 1× without changing your speed. Other open tabs pick the new speed up
 the next time they are shown; the most recent change wins.
+
+**YouTube's own speed menu** follows. On youtube.com and m.youtube.com every
+speed Kindgate gives a video, and every speed you pick outside YouTube's menu
+(in Safari's own fullscreen player, say), is also handed to YouTube's player,
+so its menu shows it and the next video starts at it. YouTube's speeds run
+from 0.25× to 2×: a speed outside that range plays as set, but YouTube's menu
+keeps the last value it knew. A speed between YouTube's steps (1.3×, say)
+also plays as set; YouTube's menu shows it under Custom, or, where YouTube
+rounds it, the nearest step. Embedded YouTube players on other sites are not
+told.
 
 A short readout over the video shows the new speed or the jump. Keys are left
 alone while you type in a field, when Command, Control, Option or Shift is held, and on
@@ -725,7 +737,8 @@ pause.js/.css      The pause screen for sites you list, all sites
 warm.js/.css       The warm night overlay, all sites
 pip.js/.css        Picture in Picture button and rotate-to-fullscreen
 player.js          Auto-unmute and default quality; keeps the NSDR at 1x
-media-keys.js/.css Rebindable speed, seek and fullscreen keys; one global speed
+media-keys.js/.css Rebindable speed, seek and fullscreen keys (Mac); one global speed
+yt-rate.js         Page-world bridge: hands that speed to YouTube's own player
 upsell.js          Blocks the App Store banner and "open in app" nags
 firstrun.js        One quiet note on the first cleaned feed page, once
 migrate.js         One-time step: earlier installs keep the parts they had on
