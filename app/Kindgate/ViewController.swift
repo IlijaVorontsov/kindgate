@@ -2,7 +2,12 @@
 //  ViewController.swift
 //  Kindgate
 //
-//  The setup checklist. Every row shows live status:
+//  The setup checklist. "Needed" holds the three steps the feeds need: the
+//  extension, youtube.com and instagram.com. "If you want" holds two rows that
+//  never show as unfinished: Make it stick (delete the apps, use the sites
+//  from the Home Screen; tapping it opens those four steps) and Other
+//  Websites, which only the opt-in parts under More help use. Every row shows
+//  live status:
 //    - the extension and the allowed sites come from timestamps the extension
 //      writes into the App Group (see background.js and
 //      SafariWebExtensionHandler.swift) — iOS offers no API for either;
@@ -30,6 +35,8 @@ private let privacyURL = URL(string: "https://kindgate.app/privacy")
 private let supportURL = URL(string: "https://kindgate.app/support")
 /// Not an address to open: tapping this row shows the licences screen.
 private let licencesAction = URL(string: "kindgate-internal:licences")
+/// Not an address to open: tapping this row shows the "make it stick" steps.
+private let stickAction = URL(string: "kindgate-internal:stick")
 
 // MARK: - Brand
 
@@ -145,20 +152,51 @@ private func buildSections(_ s: SetupStatus) -> [Section] {
     let yt = site("youtube.com", key: "youtube", open: "https://m.youtube.com/")
     let ig = site("instagram.com", key: "instagram", open: "https://www.instagram.com/")
 
-    // 4. Other Websites
+    // If you want: Other Websites. Optional, so never drawn as unfinished.
     let otherRow: Row
-    let anyPage = URL(string: "https://www.wikipedia.org/")
     if let seen = s.hosts["other"] {
-        otherRow = Row(title: "Other Websites allowed", detail: "Seen \(ago(seen)).", state: .done, action: nil)
+        otherRow = Row(title: "Other Websites", detail: "Allowed. Seen \(ago(seen)).", state: .done, action: nil)
     } else if s.isGranted("other") {
-        otherRow = Row(title: "Other Websites allowed", detail: "Allowed in Safari.", state: .done, action: nil)
+        otherRow = Row(title: "Other Websites", detail: "Allowed in Safari.", state: .done, action: nil)
     } else {
-        otherRow = Row(title: "Other Websites allowed",
-                       detail: "Needed for the check-in, the pause screen and the night screen on every site. Tap to open a page, then under \(settingsPath) set Other Websites to Allow.",
-                       state: .todo, action: anyPage)
+        otherRow = Row(title: "Other Websites",
+                       detail: "Not needed for the feeds. Only the night page, the warm screen and the pause use it, if you switch them on under More help in Kindgate. Then set Other Websites to Allow under \(settingsPath).",
+                       state: .link("globe"), action: settings)
     }
 
-    // 5. Apps deleted, sites on the Home Screen
+    let stick = stickRows(s)
+    let stuck = stick.filter { $0.state == .done }.count
+    let stickRow = Row(title: "Make it stick",
+                       detail: stuck == stick.count
+                           ? "Both apps gone, both sites on the Home Screen."
+                           : "Use the two sites from your Home Screen instead of their apps. Show me how.",
+                       state: stuck == stick.count ? .done : .link("house"), action: stickAction)
+
+    return [
+        Section(header: "Needed",
+                footer: "Each row turns green on its own. That is all Kindgate needs.",
+                rows: [extRow, yt, ig]),
+        Section(header: "If you want",
+                footer: "Neither is needed for the feeds.",
+                rows: [stickRow, otherRow]),
+        Section(header: "About",
+                footer: "No account, no server, no analytics. Everything Kindgate stores stays on this device.",
+                rows: [Row(title: "Privacy policy", detail: "kindgate.app/privacy",
+                           state: .link("hand.raised"), action: privacyURL),
+                       Row(title: "Support", detail: "kindgate.app/support",
+                           state: .link("questionmark.circle"), action: supportURL),
+                       Row(title: "Open source licences", detail: "Kindgate, the typefaces and the pause lists.",
+                           state: .link("doc.text"), action: licencesAction)]),
+    ]
+}
+
+/// The four "make it stick" steps, shown when the Make it stick row is tapped.
+private func stickRows(_ s: SetupStatus) -> [Row] {
+    let fmt = RelativeDateTimeFormatter()
+    fmt.unitsStyle = .full
+    let now = Date()
+    func ago(_ d: Date) -> String { fmt.localizedString(for: d, relativeTo: now) }
+
     func app(_ name: String, installed: Bool) -> Row {
         installed
             ? Row(title: "\(name) app deleted",
@@ -175,25 +213,38 @@ private func buildSections(_ s: SetupStatus) -> [Section] {
                    state: .todo, action: URL(string: open))
     }
 
-    return [
-        Section(header: "Safari extension",
-                footer: "Status comes from the extension itself and updates when you come back to this screen.",
-                rows: [extRow, yt, ig, otherRow]),
-        Section(header: "Make it stick",
-                footer: "A Safari extension cannot reach the YouTube or Instagram apps. Deleting them and using the sites from the Home Screen is what makes Kindgate hold.",
-                rows: [app("YouTube", installed: s.youtubeApp),
-                       app("Instagram", installed: s.instagramApp),
-                       home("youtube.com", open: "https://m.youtube.com/"),
-                       home("instagram.com", open: "https://www.instagram.com/")]),
-        Section(header: "About",
-                footer: "No account, no server, no analytics. Everything Kindgate stores stays on this device.",
-                rows: [Row(title: "Privacy policy", detail: "kindgate.app/privacy",
-                           state: .link("hand.raised"), action: privacyURL),
-                       Row(title: "Support", detail: "kindgate.app/support",
-                           state: .link("questionmark.circle"), action: supportURL),
-                       Row(title: "Open source licences", detail: "Kindgate, the typefaces and the pause lists.",
-                           state: .link("doc.text"), action: licencesAction)]),
-    ]
+    return [app("YouTube", installed: s.youtubeApp),
+            app("Instagram", installed: s.instagramApp),
+            home("youtube.com", open: "https://m.youtube.com/"),
+            home("instagram.com", open: "https://www.instagram.com/")]
+}
+
+/// One checklist row drawn into a cell; shared by both screens.
+private func configure(_ cell: UITableViewCell, with row: Row) {
+    var content = cell.defaultContentConfiguration()
+    content.text = row.title
+    content.secondaryText = row.detail
+    content.secondaryTextProperties.color = .secondaryLabel
+    content.secondaryTextProperties.numberOfLines = 0
+    content.textToSecondaryTextVerticalPadding = 2
+    switch row.state {
+    case .done:
+        content.image = UIImage(systemName: "checkmark.circle.fill")
+        content.imageProperties.tintColor = Brand.sage
+    case .stale:
+        content.image = UIImage(systemName: "exclamationmark.circle.fill")
+        content.imageProperties.tintColor = Brand.honey
+    case .todo:
+        content.image = UIImage(systemName: "circle")
+        content.imageProperties.tintColor = .tertiaryLabel
+    case .link(let symbol):
+        content.image = UIImage(systemName: symbol)
+        content.imageProperties.tintColor = .secondaryLabel
+    }
+    content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .title2)
+    cell.contentConfiguration = content
+    cell.accessoryType = row.action == nil ? .none : .disclosureIndicator
+    cell.selectionStyle = row.action == nil ? .none : .default
 }
 
 // MARK: - View controller
@@ -263,7 +314,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         title.numberOfLines = 0
 
         let sub = UILabel()
-        sub.text = "Kindgate works inside Safari. Each step below turns green on its own once it is done."
+        sub.text = "Kindgate works inside Safari. Two sites to allow, and the feeds are clean."
         sub.font = .preferredFont(forTextStyle: .body)
         sub.textColor = .secondaryLabel
         sub.adjustsFontForContentSizeCategory = true
@@ -311,33 +362,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let row = sections[indexPath.section].rows[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "row", for: indexPath)
-
-        var content = cell.defaultContentConfiguration()
-        content.text = row.title
-        content.secondaryText = row.detail
-        content.secondaryTextProperties.color = .secondaryLabel
-        content.secondaryTextProperties.numberOfLines = 0
-        content.textToSecondaryTextVerticalPadding = 2
-        switch row.state {
-        case .done:
-            content.image = UIImage(systemName: "checkmark.circle.fill")
-            content.imageProperties.tintColor = Brand.sage
-        case .stale:
-            content.image = UIImage(systemName: "exclamationmark.circle.fill")
-            content.imageProperties.tintColor = Brand.honey
-        case .todo:
-            content.image = UIImage(systemName: "circle")
-            content.imageProperties.tintColor = .tertiaryLabel
-        case .link(let symbol):
-            content.image = UIImage(systemName: symbol)
-            content.imageProperties.tintColor = .secondaryLabel
-        }
-        content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .title2)
-        cell.contentConfiguration = content
-        cell.accessoryType = row.action == nil ? .none : .disclosureIndicator
-        cell.selectionStyle = row.action == nil ? .none : .default
+        configure(cell, with: sections[indexPath.section].rows[indexPath.row])
         return cell
     }
 
@@ -348,7 +374,59 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             present(UINavigationController(rootViewController: LicencesViewController()), animated: true)
             return
         }
+        if url == stickAction {
+            present(UINavigationController(rootViewController: StickViewController()), animated: true)
+            return
+        }
         UIApplication.shared.open(url)
+    }
+}
+
+// MARK: - Make it stick
+
+/// The four optional steps behind the Make it stick row, with their live state.
+private final class StickViewController: UITableViewController {
+
+    private var rows: [Row] = []
+
+    init() { super.init(style: .insetGrouped) }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Make it stick"
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self,
+                                                            action: #selector(closeTapped))
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "row")
+        NotificationCenter.default.addObserver(self, selector: #selector(refresh),
+                                               name: UIApplication.didBecomeActiveNotification, object: nil)
+        refresh()
+    }
+
+    @objc private func refresh() {
+        let fresh = stickRows(SetupStatus.read())
+        guard fresh != rows else { return }
+        rows = fresh
+        tableView.reloadData()
+    }
+
+    @objc private func closeTapped() { dismiss(animated: true) }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { rows.count }
+
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        "If you want. A Safari extension cannot reach the YouTube or Instagram apps, so Kindgate only works where you use the sites in Safari. Deleting the apps and opening the sites from the Home Screen keeps it that way."
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "row", for: indexPath)
+        configure(cell, with: rows[indexPath.row])
+        return cell
+    }
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        if let url = rows[indexPath.row].action { UIApplication.shared.open(url) }
     }
 }
 

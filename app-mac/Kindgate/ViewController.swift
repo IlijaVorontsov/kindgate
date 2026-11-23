@@ -10,14 +10,16 @@
 //    - "extension enabled" is asked of Safari itself
 //      (SFSafariExtensionManager.getStateOfSafariExtension), which the iPhone
 //      cannot do;
-//    - the three "allowed" rows come from what the extension reports: three
+//    - the two "allowed" rows under Needed, and the optional Every website row
+//      under If you want, come from what the extension reports: three
 //      yes/no answers when it starts and a site name reduced to youtube.com,
 //      instagram.com or other when it runs on a page (background.js). The
 //      native handler writes them into the App Group and this file reads them.
 //
 //  A build signed to run locally carries no App Group (Xcode signs one only
-//  with a provisioning profile), so there the three rows say that they cannot
-//  be shown instead of waiting for ever.
+//  with a provisioning profile), so there the two site rows say that they
+//  cannot be shown instead of waiting for ever, and Every website shows how
+//  to allow it.
 //
 //  The app makes no network request. Links open in the browser.
 //
@@ -191,7 +193,8 @@ func openInSafari(_ url: URL) {
 
 // MARK: - Rows
 
-enum StepState: Equatable { case done, todo, waiting }
+/// `optional`: a row that is never unfinished, only on or not in use.
+enum StepState: Equatable { case done, todo, waiting, optional }
 
 struct Step: Identifiable, Equatable {
     let title: String
@@ -201,6 +204,8 @@ struct Step: Identifiable, Equatable {
     var id: String { title }
 }
 
+/// The three steps the feeds need. Every website is not one of them: see
+/// optionalSteps.
 func buildSteps(_ state: ExtensionState, _ r: ReportedStatus, groupAvailable: Bool = true, now: Date = Date()) -> [Step] {
     let fmt = RelativeDateTimeFormatter()
     fmt.unitsStyle = .full
@@ -248,10 +253,26 @@ func buildSteps(_ state: ExtensionState, _ r: ReportedStatus, groupAvailable: Bo
         site("instagram.com allowed", host: "instagram.com", key: "instagram",
              how: "Not seen yet. Open instagram.com in Safari, \(toolbar) Always Allow on This Website.",
              open: "https://www.instagram.com/"),
-        site("Other websites allowed", host: "other", key: "other",
-             how: "Needed for the check-in, the pause screen and the night screen on every site. Open any page in Safari, \(toolbar) Always Allow on Every Website.",
-             open: "https://www.wikipedia.org/"),
     ]
+}
+
+/// "If you want": every website, which the feeds do not need.
+func optionalSteps(_ state: ExtensionState, _ r: ReportedStatus, groupAvailable: Bool = true, now: Date = Date()) -> [Step] {
+    let fmt = RelativeDateTimeFormatter()
+    fmt.unitsStyle = .full
+    let title = "Every website"
+    let why = "Only for the video keys on other sites, and for the night page, the warm screen and the pause if you switch them on under More help. The feeds do not need it."
+    if groupAvailable, state == .enabled {
+        if let seen = r.hosts["other"] {
+            return [Step(title: title, detail: "Allowed. Kindgate ran on another site \(fmt.localizedString(for: seen, relativeTo: now)).", state: .done)]
+        }
+        if r.granted["other"] == true {
+            return [Step(title: title, detail: "Allowed in Safari.", state: .done)]
+        }
+    }
+    return [Step(title: title,
+                 detail: why + " To allow it: open any page in Safari, click Kindgate in Safari’s toolbar and choose Always Allow on Every Website.",
+                 state: .optional, open: URL(string: "https://www.wikipedia.org/"))]
 }
 
 // MARK: - Views
@@ -270,7 +291,7 @@ struct SetupView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
-                card("Safari extension") {
+                card("Needed") {
                     let steps = buildSteps(model.state, model.reported, groupAvailable: model.groupAvailable)
                     ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
                         if index > 0 { divider }
@@ -284,7 +305,12 @@ struct SetupView: View {
                         note("Safari did not open its settings. Open Safari, then Settings › Extensions, and pick Kindgate.")
                         if !model.settingsErrorDetail.isEmpty { note("Safari’s answer: \(model.settingsErrorDetail)") }
                     }
-                    note("The first row is Safari’s own answer. The others are reported by the extension and update while this window is open.")
+                    note("The first row is Safari’s own answer. The others are reported by the extension and update while this window is open. That is all Kindgate needs.")
+                }
+                card("If you want") {
+                    ForEach(optionalSteps(model.state, model.reported, groupAvailable: model.groupAvailable)) { step in
+                        StepRow(step: step)
+                    }
                 }
                 card("About") {
                     LinkRow(title: "Privacy policy", detail: "kindgate.app/privacy", symbol: "hand.raised") {
@@ -326,7 +352,7 @@ struct SetupView: View {
                 Text("Set up Kindgate")
                     .font(Brand.display(28))
                     .foregroundStyle(Brand.text)
-                Text("Kindgate works inside Safari. Each step below shows its state on its own.")
+                Text("Kindgate works inside Safari. Two sites to allow, and the feeds are clean.")
                     .font(Brand.body(13))
                     .foregroundStyle(Brand.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -367,6 +393,7 @@ private struct StepRow: View {
         case .done: return ("checkmark.circle.fill", Brand.done, "Done")
         case .todo: return ("circle", Brand.muted, "To do")
         case .waiting: return ("circle.dotted", Brand.muted, "Waiting")
+        case .optional: return ("globe", Brand.muted, "Optional")
         }
     }
 

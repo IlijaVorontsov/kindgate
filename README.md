@@ -601,15 +601,23 @@ empty one that says the extension is enabled and nothing else, which is both
 useless to a new user and thin for App Review. Kindgate's is a setup checklist,
 and every row reports live state rather than telling you what to go and check.
 
-| Row | Where the state comes from |
-| --- | --- |
-| Extension enabled | The extension itself, via a native message |
-| youtube.com allowed | A content script reporting that it ran there |
-| instagram.com allowed | The same |
-| Other Websites allowed | The same, bucketed as "other" |
-| YouTube app deleted | `canOpenURL("youtube://")` |
-| Instagram app deleted | `canOpenURL("instagram://")` |
-| Site on the Home Screen | `navigator.standalone`, reported by the content script |
+Its header says what the setup is: "Two sites to allow, and the feeds are
+clean." **Needed** holds the three steps the feeds need. **If you want**
+holds two rows that never show as unfinished, only as done or as a way to
+go further: **Make it stick**, which opens the four steps for using the sites
+instead of the apps, and **Other Websites**, which only the night page, the
+warm screen and the pause use once switched on.
+
+| Section | Row | Where the state comes from |
+| --- | --- | --- |
+| Needed | Extension enabled | The extension itself, via a native message |
+| Needed | youtube.com allowed | `youtube.js` reporting that it ran there |
+| Needed | instagram.com allowed | `instagram.js`, the same way |
+| If you want | Make it stick | Done when all four of its steps are |
+| Make it stick | YouTube app deleted | `canOpenURL("youtube://")` |
+| Make it stick | Instagram app deleted | `canOpenURL("instagram://")` |
+| Make it stick | Site on the Home Screen (each) | `navigator.standalone`, reported by the content script |
+| If you want | Other Websites | `warm.js` reporting that it ran on another site, bucketed as "other", or Safari's grant |
 
 iOS gives an app no way to ask whether its own Safari extension is enabled, or
 which sites the user allowed. So the extension tells it. `background.js` sends a
@@ -637,12 +645,12 @@ Under the checklist an **About** section links the
 
 The Mac app (`app-mac/`) is one window with the same idea and fewer rows.
 
-| Row | Where the state comes from |
-| --- | --- |
-| Extension turned on | Safari itself (`SFSafariExtensionManager`), which a Mac app may ask |
-| youtube.com allowed | The extension: Safari granted it the site, or a content script ran there |
-| instagram.com allowed | The same |
-| Other websites allowed | The same, bucketed as "other" |
+| Section | Row | Where the state comes from |
+| --- | --- | --- |
+| Needed | Extension turned on | Safari itself (`SFSafariExtensionManager`), which a Mac app may ask |
+| Needed | youtube.com allowed | The extension: Safari granted it the site, or a content script ran there |
+| Needed | instagram.com allowed | The same |
+| If you want | Every website | The same, bucketed as "other". Optional: it names what uses it (the video keys on other sites, and the night page, the warm screen and the pause once switched on) and is never shown as unfinished |
 
 A button opens Safari's extension settings with Kindgate selected. A row that
 is still open has an "Open in Safari" button for the site. Below that: the
@@ -661,7 +669,7 @@ loaded from the extension bundled inside it, not copied.
 
 A build that is signed to run locally carries no App Group: Xcode signs one
 only with a provisioning profile, which needs a developer team. In such a
-build the first row works and the three "allowed" rows say that they cannot be
+build the first row works and the two site rows say that they cannot be
 shown. Inside Safari nothing is different.
 
 ### The popup
