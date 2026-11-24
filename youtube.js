@@ -177,11 +177,13 @@
 
   function hide(el) { if (el && !el.hasAttribute('data-kindgate-hidden')) el.setAttribute('data-kindgate-hidden', ''); }
 
-  // m.youtube.com is the phone site; www.youtube.com with a mouse is a Mac.
+  // m.youtube.com is the phone site; www.youtube.com is the desktop site, on a
+  // Mac and also on an iPad, where Safari asks for desktop sites by default.
   // The bottom bar below exists because the phone site drops its own while a
-  // video is open; the desktop site keeps its menu, so it gets no extra bar.
+  // video is open; the desktop site keeps its menu, so it gets no extra bar,
+  // whatever the pointer.
   const MOBILE_SITE = /^m\./.test(location.hostname);
-  const DESKTOP = !MOBILE_SITE && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const DESKTOP = !MOBILE_SITE;
 
   // ---- Our own bottom bar on watch pages ------------------------------------
   // YouTube removes its tab bar from the DOM entirely while a video is open,

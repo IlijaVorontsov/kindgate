@@ -151,7 +151,10 @@
     return s;
   }
 
-  const DESKTOP = !/^m\./.test(location.hostname) && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // The floating button and rotate-to-fullscreen are for the phone site only.
+  // www.youtube.com is the desktop site on a Mac and on an iPad alike (Safari on
+  // iPad asks for desktop sites), and its own player has both already.
+  const DESKTOP = !/^m\./.test(location.hostname);
 
   function ensureButton() {
     const v = video();
@@ -215,7 +218,8 @@
   }
 
   function onRotate() {
-    // A Mac window turning wide is not a phone being rotated.
+    // A Mac window or an iPad turning wide on the desktop site is not a phone
+    // being rotated.
     if (DESKTOP || !isWatch() || !F.ytRotate) { clearPrompt(); return; }
     const v = video();
     if (!v) return;

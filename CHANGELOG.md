@@ -148,6 +148,7 @@ Unreleased changes live as fragments in `changelog.d/` and are folded in by
   new format the build script could not edit.
 - On YouTube, the player's own speed menu now shows the speed Kindgate set, also after you change it in Safari's fullscreen player, and the next video starts at it.
 - Links and section labels in the light popup, check-in card and Mac app are a darker amber, easier to read on the cream and sand backgrounds.
+- On an iPad, where Safari opens YouTube's desktop site, the phone-only extras (the Subscriptions / You bar, the floating Picture in Picture button and rotate to fullscreen) no longer appear over the desktop player. They stay on m.youtube.com.
 
 ### Security
 
