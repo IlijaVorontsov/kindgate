@@ -43,12 +43,12 @@
   --kg-ink: #1F1D1A;          /* text, primary buttons */
   --kg-cream: #F6F1E8;        /* ground */
   --kg-sand: #EADFCE;         /* cards, secondary buttons */
-  --kg-amber-ink: #A85F17;    /* links and eyebrows on cream */
+  --kg-amber-ink: #945414;    /* links and eyebrows on cream and sand (AA) */
 
   /* Supporting tones, all drawn from the canvas */
   --kg-ink-muted: #4A453E;    /* secondary text on cream */
   --kg-line: #D9CFBE;         /* hairlines; body text on ink panels */
-  --kg-amber-ink-hover: #7A4410;
+  --kg-amber-ink-hover: #663A0D;
   --kg-sage-deep: #4F6344;    /* the win line on a light ground */
   --kg-sage-light: #A8BE97;   /* the same idea on a dark ground */
   --kg-honey-soft: #FFCF9E;   /* warm highlight on the night screens */

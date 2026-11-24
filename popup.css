@@ -202,6 +202,7 @@ input.sw:checked { background: var(--kg-honey); }
 input.sw:checked::after { transform: translateX(18px); }
 input.sw:disabled { opacity: .45; cursor: not-allowed; }
 input.sw:focus-visible { outline: 2px solid var(--kg-amber-ink); outline-offset: 2px; }
+@media (prefers-color-scheme: dark) { input.sw:focus-visible { outline-color: var(--kg-honey); } }
 
 /* "9 of 9 on · Adjust": the card's footer opens its settings in place. */
 details.adjust { margin-top: 10px; border-top: 1px solid var(--kg-line); }

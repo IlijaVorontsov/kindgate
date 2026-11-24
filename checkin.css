@@ -130,6 +130,7 @@ html.kg-checkin-open { overflow: hidden !important; }
 .kg-chip-charger { width: 100%; margin-bottom: 14px; }
 @media (prefers-color-scheme: dark) {
   .kg-explain { color: var(--kg-line); }
+  .kg-explain li::marker { color: var(--kg-honey); }
   .kg-sub-strong { color: var(--kg-cream); }
 }
 

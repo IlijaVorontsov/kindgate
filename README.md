@@ -12,7 +12,7 @@ then asks one kind question instead of blocking anything.
 [![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20iPadOS-1F1D1A)](https://kindgate.app)
 [![Safari Web Extension](https://img.shields.io/badge/Safari-Web%20Extension%20MV3-D98E3A)](https://developer.apple.com/documentation/safariservices/safari_web_extensions)
 [![On-device](https://img.shields.io/badge/data-stays%20on%20device-6F8461)](#privacy)
-[![License](https://img.shields.io/badge/license-MPL--2.0-A85F17)](LICENSE)
+[![License](https://img.shields.io/badge/license-MPL--2.0-945414)](LICENSE)
 
 [kindgate.app](https://kindgate.app)
 
@@ -779,7 +779,7 @@ entry and linked from the popup, so no surface carries a raw hex.
 | Ink | `#1F1D1A` | text and primary buttons |
 | Cream | `#F6F1E8` | the ground |
 | Sand | `#EADFCE` | cards and secondary buttons |
-| Amber ink | `#A85F17` | links and section labels |
+| Amber ink | `#945414` | links and section labels |
 
 Headlines are set in Fraunces and everything else in Instrument Sans. Both ship
 in `fonts/` as Latin subsets of the upstream variable fonts, under the SIL Open

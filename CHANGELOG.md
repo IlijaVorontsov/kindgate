@@ -147,6 +147,7 @@ Unreleased changes live as fragments in `changelog.d/` and are folded in by
 - Building from source works with Xcode 27.2, which writes its projects in a
   new format the build script could not edit.
 - On YouTube, the player's own speed menu now shows the speed Kindgate set, also after you change it in Safari's fullscreen player, and the next video starts at it.
+- Links and section labels in the light popup, check-in card and Mac app are a darker amber, easier to read on the cream and sand backgrounds.
 
 ### Security
 

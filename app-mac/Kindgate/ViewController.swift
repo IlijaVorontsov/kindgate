@@ -65,7 +65,7 @@ enum Brand {
     static let line = pair(0xD9CFBE, 0x433E37)       // line / ink raised 2
     static let text = pair(0x1F1D1A, 0xF6F1E8)       // ink / cream
     static let muted = pair(0x4A453E, 0xD9CFBE)      // ink muted / line
-    static let link = pair(0xA85F17, 0xFFCF9E)       // amber ink / honey soft
+    static let link = pair(0x945414, 0xFFCF9E)       // amber ink / honey soft
     static let done = pair(0x4F6344, 0xA8BE97)       // sage deep / sage light
     static let honey = Color(nsColor: rgb(0xD98E3A))
 
