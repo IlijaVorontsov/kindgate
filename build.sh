@@ -418,10 +418,11 @@ for want in "ENABLE_APP_SANDBOX = YES" "ENABLE_HARDENED_RUNTIME = YES"; do
 done
 echo "App Sandbox and hardened runtime: on, both targets; no network or file entitlements"
 sed -i '' 's/INFOPLIST_KEY_NSHumanReadableCopyright = "";/INFOPLIST_KEY_NSHumanReadableCopyright = "Open source under the Mozilla Public License 2.0.";/' "$PBX"
+fi
 # The converter's app is a web view around Main.html, Script.js, Style.css and
-# Icon.png. app-mac/ replaces the code that loaded them; this takes the four
-# files out of the project and off the disk, so the app holds nothing that is
-# not in the repo.
+# Icon.png. app/ and app-mac/ replace the code that loaded them; this takes the
+# four files out of the project and off the disk on both platforms, so the app
+# holds nothing that is not in the repo and no placeholder reaches App Review.
 python3 - "$PBX" <<'PYEOF' || exit 1
 import json, re, subprocess, sys
 pbx = sys.argv[1]
@@ -453,7 +454,6 @@ for oid, o in objs.items():
         sys.exit("project.pbxproj: build file %s has no file" % oid)
 PYEOF
 rm -rf "$PROJDIR/Kindgate/Resources" "$PROJDIR/Kindgate/Assets.xcassets/LargeIcon.imageset"
-fi
 
 step "Normalise bundle identifiers"
 # The converter names the app target after the app name (dev.vorontsov.Kindgate)
@@ -593,6 +593,10 @@ check_bundle() {
     [ -n "$(find "$plug" -path "*.appex/*$f" 2>/dev/null)" ] || { echo "$f is not in the extension bundle."; return 1; }
   done
   echo "Licence texts: fonts/OFL.txt, lists/LICENSE"
+  for f in Main.html Script.js Style.css Icon.png; do
+    [ -z "$(find "$res" -name "$f" -not -path '*/PlugIns/*' 2>/dev/null)" ] || { echo "The converter's placeholder $f is still in the app bundle."; return 1; }
+  done
+  echo "Placeholder files: none"
 }
 
 # The Mac-only part: what the store and the "anyone can check" claim rest on.
