@@ -265,11 +265,22 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         tableView.tableHeaderView = makeHeader()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        // Full width on a phone. On an iPad, and above all a 13-inch one in
+        // landscape, the rows would otherwise run across the whole screen, so the
+        // table is held to the readable width (which follows Dynamic Type) plus
+        // room for the inset-grouped margins, and centred. Pinning the table to
+        // readableContentGuide itself would add a second inset on the iPhone.
+        let fill = [
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ]
+        fill.forEach { $0.priority = .defaultHigh }
+        NSLayoutConstraint.activate(fill + [
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            tableView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor),
+            tableView.widthAnchor.constraint(lessThanOrEqualTo: view.readableContentGuide.widthAnchor, constant: 80),
         ])
 
         NotificationCenter.default.addObserver(self, selector: #selector(refresh),
