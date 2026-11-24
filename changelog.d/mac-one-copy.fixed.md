@@ -1,2 +1,0 @@
-- Building the Mac app no longer leaves extra "Kindgate" entries in Safari's Extensions list: `build.sh --mac` unregisters its build copy and warns if more than one is registered.
-- The Mac app shows Safari's error code when the settings button fails.

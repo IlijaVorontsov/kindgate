@@ -1,1 +1,0 @@
-- The iPhone and iPad no longer have media keys: the "Media keys on any video" switch, the key settings and "Reset keys" are gone from the popup there, and no key presses are watched. The video speed row and carry-over stay. The Mac keeps its keys.

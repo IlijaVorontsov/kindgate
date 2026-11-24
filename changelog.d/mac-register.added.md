@@ -1,1 +1,0 @@
-- `KINDGATE_REGISTER_DEVICE=1 bash build.sh --mac` lets Xcode register this Mac with the team, which a team-signed Mac build needs once.

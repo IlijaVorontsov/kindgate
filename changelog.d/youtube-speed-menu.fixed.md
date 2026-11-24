@@ -1,1 +1,0 @@
-- On YouTube, the player's own speed menu now shows the speed Kindgate set, also after you change it in Safari's fullscreen player, and the next video starts at it.

@@ -1,1 +1,0 @@
-- Instagram's switch is now called "Hide Reels and Explore", and the night page lists "Some things that may help".

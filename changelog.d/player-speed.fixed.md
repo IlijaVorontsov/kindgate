@@ -1,1 +1,0 @@
-- A speed you pick in the player's own menu is no longer forced back to Kindgate's speed. Kindgate's speed is where each video starts, not a lock: the change holds for that video, and the next one starts at your speed again.
