@@ -851,6 +851,11 @@ cat > "$OUT/build/ExportOptions.plist" <<PLIST
 </dict>
 </plist>
 PLIST
+# Xcode packs the .ipa with /usr/bin/rsync (Apple's openrsync), which starts
+# its other end by looking "rsync" up in PATH. With Homebrew's rsync 3.x first
+# in PATH that end rejects the -E flag and the export stops with "Copy failed".
+# The system tools go first for this one command.
+PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" \
 xcodebuild -exportArchive -archivePath "$ARCHIVE" \
   -exportOptionsPlist "$OUT/build/ExportOptions.plist" \
   -exportPath "$EXPORT_DIR" -allowProvisioningUpdates \
